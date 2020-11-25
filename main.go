@@ -18,19 +18,25 @@ func home(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("Hello from Snippetbox"))
 }
 
-// Add a showSnippet handler function.
 func showSnippet(w http.ResponseWriter, _ *http.Request) {
 	w.Write([]byte("Display a specific snippet..."))
 }
 
-// Add a createSnippet handler function.
-func createSnippet(w http.ResponseWriter, _ *http.Request) {
+func createSnippet(w http.ResponseWriter, r *http.Request) {
+	// Use r.Method to check whether the request is using POST or not.
+	// Note that http.MethodPost is a constant equal to the string "POST".
+	if r.Method != http.MethodPost {
+		// If it is not, use the w.WriteHeader() method to send a 405 status code
+		// and the w,Write() method to write a "Method Not Allowed" response body.
+		// We then return from the function so that the subsequent code is not executed.
+		w.WriteHeader(405)
+		w.Write([]byte("Method is not allowed."))
+	}
+
 	w.Write([]byte("Create a new snippet..."))
 }
 
 func main() {
-	// Register the two new handlers functions and corresponding URL patterns
-	// with the servermux, in exactly the same way that we did before.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", home)
 	mux.HandleFunc("/snippet", showSnippet)

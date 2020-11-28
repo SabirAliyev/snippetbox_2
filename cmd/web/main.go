@@ -7,6 +7,13 @@ import (
 	"os"
 )
 
+// Define an application struct to hold the application wide dependencies for the web application.
+// For now we`ll only include fields for the two custom loggers, but we`ll add more to it as build process.
+type application struct {
+	errorLog *log.Logger
+	infoLog  *log.Logger
+}
+
 func main() {
 	// Define a new command-line flag with the name 'addr', a default value of ":4000"
 	// and some short help text explaining what the flag controls. The value of the
@@ -33,10 +40,17 @@ func main() {
 	errorLog := log.New(os.Stderr, "ERROR\t", log.Ldate|log.Ltime|log.Llongfile)
 	// (Use log.Llongfile to include full file path on log output).
 
+	// Initialize a new instance of application struct containing the dependencies.
+	app := &application{
+		errorLog: errorLog,
+		infoLog:  infoLog,
+	}
+
+	// Swap the route declaration to use the application struct`s methods as the handler function.
 	mux := http.NewServeMux()
-	mux.HandleFunc("/", home)
-	mux.HandleFunc("/snippet", showSnippet)
-	mux.HandleFunc("/snippet/create", createSnippet)
+	mux.HandleFunc("/", app.home)
+	mux.HandleFunc("/snippet", app.showSnippet)
+	mux.HandleFunc("/snippet/create", app.createSnippet)
 
 	// Create a file server which serves files out of the "./ui/static" directory.
 	// Note that the path given to the http.Dir function is relative to the project
@@ -48,14 +62,19 @@ func main() {
 	// before the request reaches the file server.
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	// The value returned from the flag.String() function is a pointer to the flag
-	// value, not the value itself. So we need to dereference the pointer (i.e. prefix
-	// it with the * symbol) before using it. Note that we`re using the log.Printf()
-	// function to interpolate the address with the log message.
-	// log.Printf("Starting server on %s", *addr) // DEPRECATED
+	// Initialise a http.Server struct. We set the Addr and Handler fields so that
+	// the server uses the same network address and rotes as before, and set the ErrorLog field
+	// so that the server now uses the custom errorlog logger in the event of any problem.
+	srv := &http.Server{
+		Addr:     *addr,
+		ErrorLog: errorLog,
+		Handler:  mux,
+	}
 
 	// Write messages using two loggers, instead of standard logger (see above).
 	infoLog.Printf("Starting server on %s", *addr)
-	err := http.ListenAndServe(":4000", mux)
+	// err := http.ListenAndServe(":4000", mux) // DEPRECATED
+	// Call the ListenAnServe() method on our new http.Server struct.
+	err := srv.ListenAndServe()
 	errorLog.Fatal(err)
 }

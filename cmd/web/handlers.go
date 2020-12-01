@@ -1,9 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
+	"sabiraliyev.net/snippetbox/pkg/models"
 	"strconv"
 )
 
@@ -48,7 +50,19 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		app.notFound(w) // Use the notFound() helper.
 		return
 	}
-	fmt.Fprintf(w, "Display a specific snippet with ID %d...", id)
+
+	// Use the SnippetModel object`s Get method to retrieve the data for a specific record based on ID.
+	// If no matching record is found, return a 404 Not Found response.
+	s, err := app.snippets.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+	fmt.Fprintf(w, "%v", s)
 }
 
 // Change the signature of the createSnippet() handler so it is defined as a method against *application.

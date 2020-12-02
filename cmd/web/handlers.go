@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"sabiraliyev.net/snippetbox/pkg/models"
 	"strconv"
@@ -16,31 +15,41 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice containing th e path to the two files. Notice that the
-	// home.page.tmpl file must be the *first* file in the slice.
-	files := []string{
-		"./ui/html/home.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	// Use the template.ParseFiles() function to read the files and store the
-	// templates in a template set. Notice that we can pass the slice of the paths
-	// as a variadic parameter.
-	ts, err := template.ParseFiles(files...)
+	s, err := app.snippets.Latest()
 	if err != nil {
-		app.serverError(w, err) // Use the serverError() helper.
+		app.serverError(w, err)
 		return
 	}
 
-	// Use Execute() method on the template set to write the template content as the response
-	// body. The last parameter to Execute() represents any dynamic data that we want to pass in,
-	// which for now we`ll leave as nil.
-	err = ts.Execute(w, nil)
-	if err != nil {
-		app.serverError(w, err) // Use the serverError() helper.
-		http.Error(w, "Internal Server Error", 500)
+	for _, snippet := range s {
+		fmt.Fprintf(w, "%v", snippet)
 	}
+
+	//// Initialize a slice containing th e path to the two files. Notice that the
+	//// home.page.tmpl file must be the *first* file in the slice.
+	//files := []string{
+	//	"./ui/html/home.page.tmpl",
+	//	"./ui/html/base.layout.tmpl",
+	//	"./ui/html/footer.partial.tmpl",
+	//}
+	//
+	//// Use the template.ParseFiles() function to read the files and store the
+	//// templates in a template set. Notice that we can pass the slice of the paths
+	//// as a variadic parameter.
+	//ts, err := template.ParseFiles(files...)
+	//if err != nil {
+	//	app.serverError(w, err) // Use the serverError() helper.
+	//	return
+	//}
+	//
+	//// Use Execute() method on the template set to write the template content as the response
+	//// body. The last parameter to Execute() represents any dynamic data that we want to pass in,
+	//// which for now we`ll leave as nil.
+	//err = ts.Execute(w, nil)
+	//if err != nil {
+	//	app.serverError(w, err) // Use the serverError() helper.
+	//	http.Error(w, "Internal Server Error", 500)
+	//}
 }
 
 // Change the signature of the showSnippet() handler so it is defined as a method against *application.

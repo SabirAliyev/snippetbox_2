@@ -76,7 +76,7 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 
 	// Initialize a slice, containing the path ot the show.page.tmpl file,
 	// plus the base layout and footer partial that we made earlier.
-	fmt.Printf("snippets: %+v\n", s)
+	// fmt.Printf("snippets: %+v\n", s) // TEST
 	files := []string{
 		"./ui/html/show.page.tmpl",
 		"./ui/html/base.layout.tmpl",

@@ -3,11 +3,10 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"fmt"
+	"html/template"
 	"log"
 	"net/http"
 	"os"
-	"runtime/debug"
 	"sabiraliyev.net/snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
@@ -16,34 +15,10 @@ import (
 // Define an application struct to hold the application wide dependencies for the web application.
 // For now we`ll only include fields for the two custom loggers, but we`ll add more to it as build process.
 type application struct {
-	errorLog *log.Logger
-	infoLog  *log.Logger
-	snippets *mysql.SnippetModel
-}
-
-// The ServerError helper writes an error message and stack trace to the errorLog,
-// then sends e generic 500 Internal Server Error response to the user.
-func (app *application) serverError(w http.ResponseWriter, err error) {
-	trace := fmt.Sprintf("%s\n%s", err.Error(), debug.Stack())
-
-	// To report the file name and line number *one step back* in the stack trace.
-	// We do this by setting the frame depth to 2.
-	app.errorLog.Println(2, trace)
-
-	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
-// The clientError helper send a specific status code and corresponding description
-// to the user. We`ll use this later in the book to send responses like 400 "Bad Request"
-// when there`s a problem with the request that the user send.
-func (app *application) clientError(w http.ResponseWriter, status int) {
-	http.Error(w, http.StatusText(status), status)
-}
-
-// For consistency, we`ll also implement a notFound helper. This is simply a
-// convenience wrapper around clientError which send a 404 Not Found response to the user.
-func (app *application) notFound(w http.ResponseWriter) {
-	app.clientError(w, http.StatusNotFound)
+	errorLog      *log.Logger
+	infoLog       *log.Logger
+	snippets      *mysql.SnippetModel
+	templateCache map[string]*template.Template
 }
 
 func main() {
@@ -86,11 +61,15 @@ func main() {
 	// Defer a call to db.Close(), so that the connection pool is closed before the main() function exits.
 	defer db.Close()
 
+	// Initialize a new template cache.
+	templateCache, err := newTemplateCache("./ui/html/")
+
 	// Initialize a new instance of application struct containing the dependencies.
 	app := &application{
-		errorLog: errorLog,
-		infoLog:  infoLog,
-		snippets: &mysql.SnippetModel{DB: db},
+		errorLog:      errorLog,
+		infoLog:       infoLog,
+		snippets:      &mysql.SnippetModel{DB: db},
+		templateCache: templateCache,
 	}
 
 	// Initialise a http.Server struct. We set the Addr and Handler fields so that
@@ -104,7 +83,6 @@ func main() {
 
 	// Write messages using two loggers, instead of standard logger (see above).
 	infoLog.Printf("Starting server on %s", *addr)
-	// err := http.ListenAndServe(":4000", mux) // DEPRECATED
 	// Call the ListenAnServe() method on our new http.Server struct.
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)

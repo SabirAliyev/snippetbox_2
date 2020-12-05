@@ -3,7 +3,6 @@ package main
 import (
 	"errors"
 	"fmt"
-	"html/template"
 	"net/http"
 	"strconv"
 
@@ -23,32 +22,10 @@ func (app *application) home(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create an instance of a templateData struct holding the slice of snippets
-	data := &templateData{Snippets: s}
-
-	// Initialize a slice containing th e path to the two files. Notice that the
-	// home.page.tmpl file must be the *first* file in the slice.
-	files := []string{
-		"./ui/html/home.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	// Use the template.ParseFiles() function to read the files and store the
-	// templates in a template set. Notice that we can pass the slice of the paths
-	// as a variadic parameter.
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err) // Use the serverError() helper.
-		return
-	}
-
-	// Use Execute() method on the template set to write the template content as the response
-	// body. The last parameter to Execute() represents any dynamic data that we want to pass in (data).
-	err = ts.Execute(w, data)
-	if err != nil {
-		app.serverError(w, err) // Use the serverError() helper.
-	}
+	// Use the render helper.
+	app.render(w, r, "home.page.tmpl", &templateData{
+		Snippets: s,
+	})
 }
 
 // Change the signature of the showSnippet() handler so it is defined as a method against *application.
@@ -71,31 +48,10 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Initialize a slice, containing the path ot the show.page.tmpl file,
-	// plus the base layout and footer partial that we made earlier.
-	// fmt.Printf("snippets: %+v\n", s) // TEST
-
-	//Create an instance of a templateData struct holding the snippet data.
-	data := &templateData{Snippet: s}
-
-	files := []string{
-		"./ui/html/show.page.tmpl",
-		"./ui/html/base.layout.tmpl",
-		"./ui/html/footer.partial.tmpl",
-	}
-
-	// Parse the template files.
-	ts, err := template.ParseFiles(files...)
-	if err != nil {
-		app.serverError(w, err)
-		return
-	}
-
-	// Pass the template struct when executing the template.
-	err = ts.Execute(w, data)
-	if err != nil {
-		app.serverError(w, err)
-	}
+	// Use the render helper.
+	app.render(w, r, "show.page.tmpl", &templateData{
+		Snippet: s,
+	})
 }
 
 // Change the signature of the createSnippet() handler so it is defined as a method against *application.

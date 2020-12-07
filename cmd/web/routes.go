@@ -2,7 +2,8 @@ package main
 
 import "net/http"
 
-func (app *application) routes() *http.ServeMux {
+// Update the signature for the routes() method so that it returns a http.Handler instead of *http.ServerMux.
+func (app *application) routes() http.Handler {
 	// Swap the route declaration to use the application struct`s methods as the handler function.
 	mux := http.NewServeMux()
 	mux.HandleFunc("/", app.home)
@@ -19,5 +20,7 @@ func (app *application) routes() *http.ServeMux {
 	// before the request reaches the file server.
 	mux.Handle("/static/", http.StripPrefix("/static", fileServer))
 
-	return mux
+	// Pass the servemux as the 'next' parameter to the secureHeaders middleware. Because secureHeaders
+	// is just a function, and the function returns http.Handler we don`t need to do anything else.
+	return secureHeaders(mux)
 }

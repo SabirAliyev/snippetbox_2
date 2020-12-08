@@ -3,7 +3,6 @@ package mysql
 import (
 	"database/sql"
 	"errors"
-
 	// Import the models package we crated. You need to prefix this with
 	// whatever module path you set up back in chapter 02.02 (Project Setup and
 	// Enabling Modules) so that the import statement looks like this:

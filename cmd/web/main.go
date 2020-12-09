@@ -7,9 +7,12 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"time"
+
 	"sabiraliyev.net/snippetbox/pkg/models/mysql"
 
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/golangcollege/sessions"
 )
 
 // Define an application struct to hold the application wide dependencies for the web application.
@@ -17,6 +20,7 @@ import (
 type application struct {
 	errorLog      *log.Logger
 	infoLog       *log.Logger
+	session       *sessions.Session
 	snippets      *mysql.SnippetModel
 	templateCache map[string]*template.Template
 }
@@ -29,6 +33,10 @@ func main() {
 
 	// Define a command-line flag for the MySQL DSN string.
 	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
+
+	// Define a command-line flag for the session secret (a random key which will be used to encrypt
+	// and authenticate session cookies). It should be 32 bytes long.
+	secret := flag.String("secret", "i334343g3+g3gk3@i3g335+35g4589gj", "Secret key")
 
 	// Importantly, we use the flag.Parse() function to parse the command-line flag.
 	// This readr in the command-line flag value and assigns it to the addr variable.
@@ -64,10 +72,16 @@ func main() {
 	// Initialize a new template cache.
 	templateCache, err := newTemplateCache("./ui/html/")
 
-	// Initialize a new instance of application struct containing the dependencies.
+	// Use the session.New() function to initialize a new session manager, passing in the secret key
+	// as the parameter. Then we configure it so session always expires after 12 hours.
+	session := sessions.New([]byte(*secret))
+	session.Lifetime = 12 * time.Hour
+
+	// Initialize an instance of application struct containing the dependencies.
 	app := &application{
 		errorLog:      errorLog,
 		infoLog:       infoLog,
+		session:       session,
 		snippets:      &mysql.SnippetModel{DB: db},
 		templateCache: templateCache,
 	}
@@ -81,9 +95,9 @@ func main() {
 		Handler:  app.routes(), // Call the new app.routes() method.
 	}
 
-	// Write messages using two loggers, instead of standard logger (see above).
+	// Write messages using two loggers.
 	infoLog.Printf("Starting server on %s", *addr)
-	// Call the ListenAnServe() method on our new http.Server struct.
+	// Call the ListenAnServe() method on the http.Server struct.
 	err = srv.ListenAndServe()
 	errorLog.Fatal(err)
 }

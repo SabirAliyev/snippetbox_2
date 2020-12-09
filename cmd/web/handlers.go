@@ -98,15 +98,23 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		errors["expires"] = "This field is invalid"
 	}
 
+	// If there are any validation errors, redisplay the create.page.tmpl template passing in the validation
+	// errors and previously submitted r.PostForm data.
+	if len(errors) > 0 {
+		app.render(w, r, "create.page.tmpl", &templateData{
+			FormErrors: errors,
+			FormData:   r.PostForm,
+		})
+		return
+	}
+
 	// If there are any errors, dump them in a plain text HTTP response and return from the handler.
 	if len(errors) > 0 {
 		_, _ = fmt.Fprint(w, errors)
 		return
 	}
 
-	// Create a new snippet record in the database using the form data.
 	id, err := app.snippets.Insert(title, content, expires)
-
 	if err != nil {
 		app.serverError(w, err)
 		return

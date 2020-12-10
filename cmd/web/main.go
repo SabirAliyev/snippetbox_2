@@ -71,6 +71,9 @@ func main() {
 
 	// Initialize a new template cache.
 	templateCache, err := newTemplateCache("./ui/html/")
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	// Use the session.New() function to initialize a new session manager, passing in the secret key
 	// as the parameter. Then we configure it so session always expires after 12 hours.
@@ -92,7 +95,7 @@ func main() {
 	srv := &http.Server{
 		Addr:     *addr,
 		ErrorLog: errorLog,
-		Handler:  app.routes(), // Call the new app.routes() method.
+		Handler:  app.routes(), // Call the app.routes() method.
 	}
 
 	// Write messages using two loggers.

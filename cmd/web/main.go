@@ -24,6 +24,7 @@ type application struct {
 	session       *sessions.Session
 	snippets      *mysql.SnippetModel
 	templateCache map[string]*template.Template
+	users         *mysql.UserModel
 }
 
 func main() {
@@ -89,6 +90,7 @@ func main() {
 		session:       session,
 		snippets:      &mysql.SnippetModel{DB: db},
 		templateCache: templateCache,
+		users:         &mysql.UserModel{DB: db},
 	}
 
 	// Initialize a tls.Config struct to hold the non-default LTS settings we want server to use.
@@ -101,11 +103,10 @@ func main() {
 	// the server uses the same network address and rotes as before, and set the ErrorLog field
 	// so that the server now uses the custom errorlog logger in the event of any problem.
 	srv := &http.Server{
-		Addr:      *addr,
-		ErrorLog:  errorLog,
-		Handler:   app.routes(), // Call the app.routes() method.
-		TLSConfig: tlsConfig,    // Set the server`s TLSConfig field.
-		// Add Idle, Read and Write timeouts to the server.
+		Addr:         *addr,
+		ErrorLog:     errorLog,
+		Handler:      app.routes(), // Call the app.routes() method.
+		TLSConfig:    tlsConfig,    // Set the server`s TLSConfig field.
 		IdleTimeout:  time.Minute,
 		ReadTimeout:  5 * time.Second,
 		WriteTimeout: 10 * time.Second,

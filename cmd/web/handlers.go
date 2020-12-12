@@ -10,6 +10,8 @@ import (
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
 
+//#region Snippet handlers
+
 // Change the signature of the home handler so it is defined as a method against *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
 	// Because Pat matches the "/" path exactly, we can now remove the manual check of r.URL.PAth != "/" from this handler.
@@ -101,11 +103,38 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
-func (app *application) signupUserForm(w http.ResponseWriter, _ *http.Request) {
-	fmt.Fprintln(w, "Display the user signup form...")
+//#endregion
+
+//#region User handlers
+func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "signup.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
-func (app *application) signupUser(w http.ResponseWriter, _ *http.Request) {
+func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
+	// Parse the form data.
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	// validate the form contents using the form helper.
+	form := forms.New(r.PostForm)
+	form.Required("name", "email", "password")
+	form.MaxLength("name", 255)
+	form.MaxLength("name", 255)
+	form.MatchesPattern("email", forms.EmailRX)
+	form.MinLength("password", 10)
+
+	// If there are any errors, redisplay the signup form.
+	if !form.Valid() {
+		app.render(w, r, "signup.page.tmpl", &templateData{Form: form})
+		return
+	}
+
+	// Otherwise send a placeholder response (for now!).
 	fmt.Fprintln(w, "Create a new user...")
 }
 
@@ -120,3 +149,5 @@ func (app *application) loginUser(w http.ResponseWriter, _ *http.Request) {
 func (app *application) logoutUser(w http.ResponseWriter, _ *http.Request) {
 	fmt.Fprintln(w, "Logout the user...")
 }
+
+//#endregion

@@ -83,6 +83,12 @@ func main() {
 	session.Lifetime = 12 * time.Hour
 	session.Secure = true // Set the Secure flag on the session cookies.
 
+	// Setting SameSite=Strict will block the session cookie being send by user`s browser for ALL cross-site usage.
+	// This includes when a user clicks on an external link to the application, meaning that after clicking the link
+	// they will initially be treated as 'not logged in' even if they an active session containing their
+	// "authenticatedUserID" value:
+	// session.SameSite = http.SameSiteStrictMode // Default value is SameSite=Lax
+
 	// Initialize an instance of application struct containing the dependencies.
 	app := &application{
 		errorLog:      errorLog,

@@ -78,3 +78,11 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 	// where we pass our http.ResponseWriter to a function that takes an io.Writer.
 	buf.WriteTo(w)
 }
+
+func (app *application) isAuthenticated(r *http.Request) bool {
+	isAuthenticated, ok := r.Context().Value(contextKeyIsAuthenticated).(bool)
+	if !ok {
+		return false
+	}
+	return isAuthenticated
+}

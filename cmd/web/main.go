@@ -16,6 +16,10 @@ import (
 	"github.com/golangcollege/sessions"
 )
 
+type contextKey string
+
+const contextKeyIsAuthenticated = contextKey("isAuthenticated")
+
 // Define an application struct to hold the application wide dependencies for the web application.
 // For now we`ll only include fields for the two custom loggers, but we`ll add more to it as build process.
 type application struct {

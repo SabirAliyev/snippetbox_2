@@ -198,3 +198,7 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 }
 
 //#endregion
+
+func ping(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("OK"))
+}

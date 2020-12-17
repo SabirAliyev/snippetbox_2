@@ -45,6 +45,6 @@ func TestPing(t *testing.T) {
 	}
 
 	if string(body) != "OK" {
-		t.Errorf("want body t equal %q", "OK")
+		t.Errorf("want body to equal %q", "OK")
 	}
 }

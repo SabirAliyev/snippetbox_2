@@ -8,6 +8,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"sabiraliyev.net/snippetbox/pkg/models"
 	"time"
 
 	"sabiraliyev.net/snippetbox/pkg/models/mysql"
@@ -23,12 +24,20 @@ const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 // Define an application struct to hold the application wide dependencies for the web application.
 // For now we`ll only include fields for the two custom loggers, but we`ll add more to it as build process.
 type application struct {
-	errorLog      *log.Logger
-	infoLog       *log.Logger
-	session       *sessions.Session
-	snippets      *mysql.SnippetModel
+	errorLog *log.Logger
+	infoLog  *log.Logger
+	session  *sessions.Session
+	snippets interface {
+		Insert(string, string, string) (int error)
+		Get(int) (*models.Snippet, error)
+		Latest() ([]*models.Snippet, error)
+	}
 	templateCache map[string]*template.Template
-	users         *mysql.UserModel
+	users         interface {
+		Insert(string, string, string) error
+		Authenticate(string, string) (int, error)
+		Get(int) (*models.User, error)
+	}
 }
 
 func main() {

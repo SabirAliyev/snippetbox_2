@@ -33,6 +33,10 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	// Pat doesn`t strip the colon from the names capture key,
 	// so we need to get the value of ":id" from the query string instead of "id".
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+
+	fmt.Println("The request:", r.URL.Query().Get(":id")) // Debugging
+	fmt.Println("An ID:", id)
+
 	if err != nil || id < 1 {
 		app.notFound(w) // Use the notFound() helper.
 		return

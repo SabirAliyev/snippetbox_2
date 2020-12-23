@@ -2,15 +2,31 @@ package main
 
 import (
 	"github.com/golangcollege/sessions"
+	"html"
 	"io/ioutil"
 	"log"
 	"net/http"
 	"net/http/cookiejar"
 	"net/http/httptest"
+	"regexp"
 	"sabiraliyev.net/snippetbox/pkg/models/mock"
 	"testing"
 	"time"
 )
+
+// Define a regular expression which captures the CSRF token value from the HTML for user signup page.
+var csrfTokenRX = regexp.MustCompile(`<input type='hidden' name='csrf_token' value='(.+)'>`)
+
+func extractSCRFToken(t *testing.T, body []byte) string {
+	// the FindSubmatch method to extract the token from the HTML body. Note that this
+	// returns an array with the entire matches pattern in the first position, and the values
+	// of any captured data in the subsequent position.
+	matches := csrfTokenRX.FindSubmatch(body)
+	if len(matches) < 2 {
+		t.Fatal("no csrf token found in body")
+	}
+	return html.UnescapeString(string(matches[1]))
+}
 
 // The helper which returns an instance of our application struct, containing mock dependencies.
 func newTestApplication(t *testing.T) *application {

@@ -3,9 +3,11 @@ package mysql
 import (
 	"database/sql"
 	"errors"
-	"github.com/go-sql-driver/mysql"
+	"github.com/lib/pq"
+
+	// "github.com/go-sql-driver/mysql"
 	"golang.org/x/crypto/bcrypt"
-	"strings"
+	// "strings"
 
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
@@ -21,7 +23,7 @@ func (m *UserModel) Insert(name, email, password string) error {
 		return err
 	}
 
-	stmt := `INSERT INTO users (name, email, hashed_password, created) VALUES(?, ?, ?, UTC_TIMESTAMP())`
+	stmt := `INSERT INTO users (name, email, hashed_password, created) VALUES ($1, $2, $3, NOW())`
 
 	// The Exec() method to insert the user details and hashed password into the users table.
 	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
@@ -30,11 +32,11 @@ func (m *UserModel) Insert(name, email, password string) error {
 		// has the type *mysql.MySQLError. If it does, the error will be assigned to the MySQLError
 		// variable. We can then check whether or not the error relates to our users_uc_email key by
 		// checking the contents of the message string. If it does, we return an ErrDuplicateEmail error.
-		var mySQLError *mysql.MySQLError
-		if errors.As(err, &mySQLError) {
-			if mySQLError.Number == 1062 && strings.Contains(mySQLError.Message, "users_uc_email") {
-				return models.ErrDuplicvateEmail
-			}
+		pqError := err.(*pq.Error)
+		if errors.As(err, &pqError) {
+			//if pqError.Code.Name() == 1062 && strings.Contains(pqError.Message, "users_uc_email") {
+			//	return models.ErrDuplicvateEmail
+			//}
 		}
 		return err
 	}
@@ -47,7 +49,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	// or the user is not active, we return theErrInvalidCredentials error.
 	var id int
 	var hashedPassword []byte
-	stmt := `SELECT id, hashed_password FROM users wHERE email = ? AND active = TRUE`
+	stmt := `SELECT id, hashed_password FROM users WHERE email = $1 AND active = TRUE`
 	row := m.DB.QueryRow(stmt, email)
 	err := row.Scan(&id, &hashedPassword)
 	if err != nil {
@@ -77,7 +79,7 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 func (m *UserModel) Get(id int) (*models.User, error) {
 	u := &models.User{}
 
-	stmt := `SELECT  id, name, email, created, active FROM users WHERE id = ?`
+	stmt := `SELECT  id, name, email, created, active FROM users WHERE id = $1`
 	err := m.DB.QueryRow(stmt, id).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {

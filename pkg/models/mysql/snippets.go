@@ -3,6 +3,8 @@ package mysql
 import (
 	"database/sql"
 	"errors"
+	"log"
+
 	// Import the models package we crated. You need to prefix this with
 	// whatever module path you set up back in chapter 02.02 (Project Setup and
 	// Enabling Modules) so that the import statement looks like this:
@@ -20,31 +22,27 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	// Write the SQL statement we want to execute. We split it over two lines
 	// for readability (which is why it`s surrounded with backquotes instead
 	// of normal double quotes).
-	stmt := `INSERT INTO snippets (title, content, created, expires) VALUES(?, ?, UTC_TIMESTAMP(), DATE_ADD(UTC_TIMESTAMP(), INTERVAL ? DAY))`
+	stmt := `INSERT INTO snippets (title, content, created, expires) VALUES($1, $2, NOW(), NOW() + $3 * INTERVAL '1 DAY') RETURNING id`
 
-	// Use the Exec() method on the embedded connection pool to execute the statement.
-	// The first parameter is the SQL statement, followed by the title, content and expiry
-	// values for the placeholder parameters. This method returns a sql.Result object,
-	// which contains some basic information about what happened when the statement was executed.
-	result, err := m.DB.Exec(stmt, title, content, expires)
+	result, err := m.DB.Prepare(stmt)
 	if err != nil {
-		return 0, err
+		log.Fatal(err)
 	}
 
-	// Use the LastInsertId() method on the result object to get the ID of our
+	// Use the Scan() method on the result object to get the ID of our
 	// newly inserted record in the snippets table.
-	id, err := result.LastInsertId()
+	var snippetId int
+	err = result.QueryRow(title, content, expires).Scan(&snippetId)
 	if err != nil {
 		return 0, err
 	}
 
-	// The ID returned has the type int64, so we convert it to an int type before returning.
-	return int(id), nil
+	return snippetId, nil
 }
 
 // This will return a specific snippet based on its id.
 func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() AND id = ?`
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > NOW() AND id = $1`
 
 	// Use the QueryRow() method on the connection pool to execute the SQL statement,
 	// passing the untrusted id variable as the value for the placeholder parameter.
@@ -75,7 +73,7 @@ func (m *SnippetModel) Get(id int) (*models.Snippet, error) {
 
 //This will return the 10 most recently created snippets.
 func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
-	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > UTC_TIMESTAMP() ORDER BY created DESC LIMIT 10`
+	stmt := `SELECT id, title, content, created, expires FROM snippets WHERE expires > NOW() ORDER BY created DESC LIMIT 10`
 
 	// Use the Query() method on the connection pool to execute our SQL statement.
 	// This returns a sql.Rows resultset containing the result of the query.

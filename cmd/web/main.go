@@ -4,6 +4,8 @@ import (
 	"crypto/tls"
 	"database/sql"
 	"flag"
+	"fmt"
+	"github.com/golangcollege/sessions"
 	"html/template"
 	"log"
 	"net/http"
@@ -13,12 +15,18 @@ import (
 
 	"sabiraliyev.net/snippetbox/pkg/models/mysql"
 
-	_ "github.com/go-sql-driver/mysql"
-	"github.com/golangcollege/sessions"
+	_ "github.com/lib/pq"
 )
 
 type contextKey string
 
+const (
+	host     = "localhost"
+	port     = 5432
+	user     = "postgres"
+	password = "pass"
+	dbname   = "snippetbox"
+)
 const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 
 // Define an application struct to hold the application wide dependencies for the web application.
@@ -41,13 +49,16 @@ type application struct {
 }
 
 func main() {
+	psqlInfo := fmt.Sprintf("host=%s port=%d user=%s password=%s dbname=%s sslmode=disable",
+		host, port, user, password, dbname)
+
 	// Define a new command-line flag with the name 'addr', a default value of ":4000"
 	// and some short help text explaining what the flag controls. The value of the
 	// flag will be stored in hte addr variable at runtime.
 	addr := flag.String("addr", ":4000", "HTTP network address")
 
 	// Define a command-line flag for the MySQL DSN string.
-	dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
+	// dsn := flag.String("dsn", "web:pass@/snippetbox?parseTime=true", "MySQL data source name")
 
 	// Define a command-line flag for the session secret (a random key which will be used to encrypt
 	// and authenticate session cookies). It should be 32 bytes long.
@@ -76,13 +87,18 @@ func main() {
 	// To keep the Main() function tidy, we put the code for creating a connection
 	// pool into the separate openDB() function below. We pass openDB() the DSN
 	// from the command-line flag.
-	db, err := openDB(*dsn)
+	db, err := openDB(psqlInfo)
 	if err != nil {
 		errorLog.Fatal(err)
 	}
 
 	// Defer a call to db.Close(), so that the connection pool is closed before the main() function exits.
 	defer db.Close()
+
+	err = db.Ping()
+	if err != nil {
+		errorLog.Fatal(err)
+	}
 
 	// Initialize a new template cache.
 	templateCache, err := newTemplateCache("./ui/html/")
@@ -140,8 +156,8 @@ func main() {
 }
 
 // The openDB() function wraps sql.Open() and returns a sql.DB connection pull for a given DSN.
-func openDB(dsn string) (*sql.DB, error) {
-	db, err := sql.Open("mysql", dsn)
+func openDB(psqlInfo string) (*sql.DB, error) {
+	db, err := sql.Open("postgres", psqlInfo)
 	if err != nil {
 		return nil, err
 	}

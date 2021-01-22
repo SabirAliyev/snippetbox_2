@@ -57,6 +57,20 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("showAdminPage method")
+
+	s, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.render(w, r, "admin.page.tmpl", &templateData{
+		Snippets: s,
+	})
+}
+
 // Add new createSnippetForm handler, which for now a placeholder response.
 func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "create.page.tmpl", &templateData{
@@ -105,13 +119,6 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 //#endregion
-
-//#region User handlers
-func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "signup.page.tmpl", &templateData{
-		Form: forms.New(nil),
-	})
-}
 
 func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// Parse the form data.
@@ -196,6 +203,13 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	// Add a flash message to the session to confirm to the user that the`re benn logged out.
 	app.session.Put(r, "flash", "You`ve been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+//#region User handlers
+func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "signup.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
 //#endregion

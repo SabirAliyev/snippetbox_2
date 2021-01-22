@@ -1,10 +1,9 @@
 {{template "base" .}}
 
-{{define "title"}}Admin{{end}}
+{{define "title"}}Admin Panel{{end}}
 
-{{define "admin"}}
-    <!--suppress HtmlUnknownTarget -->
-    <h2>Latest Snippets</h2>
+{{define "main"}}
+    <h2>Admin Panel</h2>
     {{if .Snippets}}
         <table>
             <tr>
@@ -14,7 +13,6 @@
             </tr>
             {{range .Snippets}}
                 <tr>
-                    <!-- Use the new semantic URL style -->
                     <td><a href="/snippet/{{.ID}}">{{.Title}}</a></td>
                     <td>{{humanDate .Created}}</td>
                     <td>#{{.ID}}</td>

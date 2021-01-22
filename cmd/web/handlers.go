@@ -58,8 +58,6 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("showAdminPage method")
-
 	s, err := app.snippets.Latest()
 	if err != nil {
 		app.serverError(w, err)
@@ -193,8 +191,31 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 	// Add the ID of the current user to the session, so that they are now 'logged in'.
 	app.session.Put(r, "authenticatedUserID", id)
 
+	// Add the Administrator bool value to the session.
+	var isAdmin = app.isUserAdmin(id)
+	app.session.Put(r, "isAdministrator", isAdmin)
+
+	fmt.Println("User ID: ", id)
+	fmt.Println("Is Admin: ", isAdmin)
+
 	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+}
+
+func (app *application) isUserAdmin(id int) bool {
+	var isAdmin bool
+	user, err := app.users.Get(id)
+
+	fmt.Println("User Name", user.Name)
+
+	if err != nil {
+		app.errorLog.Fatal(err)
+	} else {
+		if user.Administrator {
+			isAdmin = true
+		}
+	}
+	return isAdmin
 }
 
 func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {

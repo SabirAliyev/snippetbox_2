@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"log"
+	"strconv"
 
 	// Import the models package we crated. You need to prefix this with
 	// whatever module path you set up back in chapter 02.02 (Project Setup and
@@ -38,6 +39,24 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	}
 
 	return snippetId, nil
+}
+
+// Mark snippet as Deleted. No actually removal is performed.
+func (m *SnippetModel) Delete(id int) (int, error) {
+	idStr := strconv.Itoa(id)
+	errorCode := 0
+	stmt := "UPDATE snippets SET deleted = true WHERE id =" + idStr + ";"
+
+	_, err := m.DB.Prepare(stmt)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	_, err = m.DB.Exec(stmt)
+	if err != nil {
+		errorCode = 0
+	}
+	return errorCode, nil
 }
 
 // This will return a specific snippet based on its id.

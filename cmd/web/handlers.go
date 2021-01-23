@@ -116,6 +116,11 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
+func (app *application) deleteSnippet(w http.ResponseWriter, r *http.Request) {
+	//form := forms.New(r.Form.Get())
+	fmt.Println("deleteSnippet method...")
+}
+
 //#endregion
 
 func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {

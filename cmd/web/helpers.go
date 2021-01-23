@@ -91,8 +91,6 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 func (app *application) isAdministrator(r *http.Request) bool {
 	isAdministrator, ok := r.Context().Value(contextKeyIsAdministrator).(bool)
 
-	fmt.Println("User is Admin [helper]:", isAdministrator) // Test info.
-
 	if !ok {
 		return false
 	}

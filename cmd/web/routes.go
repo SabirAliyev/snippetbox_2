@@ -23,6 +23,7 @@ func (app *application) routes() http.Handler {
 	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createSnippet))
 	mux.Get("/snippet/admin", dynamicMiddleware.ThenFunc(app.showAdminPage))
+	mux.Post("/snippet/delete", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.deleteSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
 	//#endregion
 

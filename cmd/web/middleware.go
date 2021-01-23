@@ -108,7 +108,6 @@ func (app *application) authenticateAsAdmin(next http.Handler) http.Handler {
 		if user != nil {
 			if err == nil {
 				isAdmin = user.Administrator
-				fmt.Println("User is Admin [middleware]: ", isAdmin) // Test info.
 			} else {
 				app.serverError(w, err)
 				return

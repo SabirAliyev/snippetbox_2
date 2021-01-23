@@ -75,7 +75,6 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 		app.serverError(w, err)
 		return
 	}
-
 	// Write the contents of the buffer to the http.ResponseWriter. Again, this is another time
 	// where we pass our http.ResponseWriter to a function that takes an io.Writer.
 	buf.WriteTo(w)
@@ -90,9 +89,13 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 }
 
 func (app *application) isAdministrator(r *http.Request) bool {
-	isAdministrator, ok := r.Context().Value(isAdministrator).(bool)
+	isAdministrator, ok := r.Context().Value(contextKeyIsAdministrator).(bool)
+
+	fmt.Println("User is Admin [helper]:", isAdministrator) // Test info.
+
 	if !ok {
 		return false
 	}
+
 	return isAdministrator
 }

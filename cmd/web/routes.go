@@ -14,8 +14,8 @@ func (app *application) routes() http.Handler {
 	standardMiddleware := alice.New(app.recoverPanic, app.logRequest, secureHeaders)
 
 	// The middleware chain containing the middleware specific to our dynamic application routes.
-	// Using the nosurf middleware on all 'dynamic' routes with authenticate() middleware.
-	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate)
+	// Using the noSurf middleware on all 'dynamic' routes with authenticate() and authenticateAsAdmin() middleware.
+	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate, app.authenticateAsAdmin)
 
 	mux := pat.New()
 	//#region Snippet routes.

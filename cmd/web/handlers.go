@@ -195,9 +195,6 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 	var isAdmin = app.isUserAdmin(id)
 	app.session.Put(r, "isAdministrator", isAdmin)
 
-	fmt.Println("User ID: ", id)
-	fmt.Println("Is Admin: ", isAdmin)
-
 	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
 }
@@ -205,8 +202,6 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 func (app *application) isUserAdmin(id int) bool {
 	var isAdmin bool
 	user, err := app.users.Get(id)
-
-	fmt.Println("User Name", user.Name)
 
 	if err != nil {
 		app.errorLog.Fatal(err)

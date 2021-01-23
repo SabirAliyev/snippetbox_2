@@ -100,3 +100,21 @@ func (app *application) authenticate(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (app *application) authenticateAsAdmin(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		var isAdmin = false
+		user, err := app.users.Get(app.session.GetInt(r, "authenticatedUserID"))
+		if user != nil {
+			if err == nil {
+				isAdmin = user.Administrator
+				fmt.Println("User is Admin [middleware]: ", isAdmin) // Test info.
+			} else {
+				app.serverError(w, err)
+				return
+			}
+		}
+		ctx := context.WithValue(r.Context(), contextKeyIsAdministrator, isAdmin)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}

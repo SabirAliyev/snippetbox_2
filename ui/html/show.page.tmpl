@@ -3,18 +3,25 @@
 {{define "title"}}Snippet #{{.Snippet.ID}}{{end}}
 
 {{define "main"}}
-    {{with .Snippet}}
-    <div class="snippet">
-        <div class="metadata">
-            <strong>{{.Title}}</strong>
-            <span>#{{.ID}}</span>
+    <form action="/snippet/delete" method="POST">
+        {{with .Snippet}}
+            <div class="snippet">
+                <div class="metadata">
+                    <strong>{{.Title}}</strong>
+                    <span>#{{.ID}}</span>
+                </div>
+                <pre><code>{{.Content}}</code></pre>
+                <div class="metadata">
+                    <!-- Use new template function here -->
+                    <time>Created: {{humanDate .Created}}</time>
+                    <time>Expires: {{humanDate .Expires}}</time>
+                </div>
+            </div>
+        {{end}}
+        <div>
+            {{if .IsAdministrator}}
+                <input type="submit" value="Delete snippet">
+            {{end}}
         </div>
-        <pre><code>{{.Content}}</code></pre>
-        <div class="metadata">
-            <!-- Use new template function here -->
-            <time>Created: {{humanDate .Created}}</time>
-            <time>Expires: {{humanDate .Expires}}</time>
-        </div>
-    </div>
-    {{end}}
+    </form>
 {{end}}

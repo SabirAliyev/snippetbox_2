@@ -57,6 +57,18 @@ func (app *application) showSnippet(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
+	s, err := app.snippets.Latest()
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+
+	app.render(w, r, "admin.page.tmpl", &templateData{
+		Snippets: s,
+	})
+}
+
 // Add new createSnippetForm handler, which for now a placeholder response.
 func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "create.page.tmpl", &templateData{
@@ -104,14 +116,12 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, fmt.Sprintf("/snippet/%d", id), http.StatusSeeOther)
 }
 
-//#endregion
-
-//#region User handlers
-func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
-	app.render(w, r, "signup.page.tmpl", &templateData{
-		Form: forms.New(nil),
-	})
+func (app *application) deleteSnippet(w http.ResponseWriter, r *http.Request) {
+	//form := forms.New(r.Form.Get())
+	fmt.Println("deleteSnippet method...")
 }
+
+//#endregion
 
 func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// Parse the form data.
@@ -186,8 +196,26 @@ func (app *application) loginUser(w http.ResponseWriter, r *http.Request) {
 	// Add the ID of the current user to the session, so that they are now 'logged in'.
 	app.session.Put(r, "authenticatedUserID", id)
 
+	// Add the Administrator bool value to the session.
+	var isAdmin = app.isUserAdmin(id)
+	app.session.Put(r, "isAdministrator", isAdmin)
+
 	// Redirect the user to the create snippet page.
 	http.Redirect(w, r, "/snippet/create", http.StatusSeeOther)
+}
+
+func (app *application) isUserAdmin(id int) bool {
+	var isAdmin bool
+	user, err := app.users.Get(id)
+
+	if err != nil {
+		app.errorLog.Fatal(err)
+	} else {
+		if user.Administrator {
+			isAdmin = true
+		}
+	}
+	return isAdmin
 }
 
 func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
@@ -196,6 +224,13 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	// Add a flash message to the session to confirm to the user that the`re benn logged out.
 	app.session.Put(r, "flash", "You`ve been logged out successfully!")
 	http.Redirect(w, r, "/", http.StatusSeeOther)
+}
+
+//#region User handlers
+func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
+	app.render(w, r, "signup.page.tmpl", &templateData{
+		Form: forms.New(nil),
+	})
 }
 
 //#endregion

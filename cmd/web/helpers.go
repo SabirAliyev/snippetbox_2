@@ -34,7 +34,7 @@ func (app *application) notFound(w http.ResponseWriter) {
 	app.clientError(w, http.StatusNotFound)
 }
 
-// Create an addDefaultData helper. This takes a pointer to a TemplateData struct, add the current year
+// The addDefaultData helper takes a pointer to a TemplateData struct, add the current year
 // to the CurrentYear field, and then returns the pointer. Again, we`re not using the *http.Request
 // parameter at the moment.
 func (app *application) addDefaultData(td *templateData, r *http.Request) *templateData {
@@ -43,12 +43,14 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	}
 	td.CurrentYear = time.Now().Year()
 	td.CSRFToken = nosurf.Token(r)
+
 	// Use the PopString() method to retrieve the value for the "flash" key. PopString() also deletes
 	// the key and value from the session data, so it acts like a one-time fetch. If there is no matching
 	// key in the session data, this will return the empty string.
 	// Add the flash message to the template data, if one exist.
 	td.Flash = app.session.PopString(r, "flash")
 	td.IsAuthenticated = app.isAuthenticated(r)
+	td.IsAdministrator = app.isAdministrator(r)
 	return td
 }
 
@@ -73,7 +75,6 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 		app.serverError(w, err)
 		return
 	}
-
 	// Write the contents of the buffer to the http.ResponseWriter. Again, this is another time
 	// where we pass our http.ResponseWriter to a function that takes an io.Writer.
 	buf.WriteTo(w)
@@ -85,4 +86,14 @@ func (app *application) isAuthenticated(r *http.Request) bool {
 		return false
 	}
 	return isAuthenticated
+}
+
+func (app *application) isAdministrator(r *http.Request) bool {
+	isAdministrator, ok := r.Context().Value(contextKeyIsAdministrator).(bool)
+
+	if !ok {
+		return false
+	}
+
+	return isAdministrator
 }

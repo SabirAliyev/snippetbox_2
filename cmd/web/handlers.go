@@ -3,14 +3,12 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
 	"strconv"
 
+	"net/http"
 	"sabiraliyev.net/snippetbox/pkg/forms"
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
-
-//#region Snippet handlers
 
 // Change the signature of the home handler so it is defined as a method against *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -63,9 +61,19 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
 	app.render(w, r, "admin.page.tmpl", &templateData{
 		Snippets: s,
+	})
+}
+
+func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
+	//m, err := app.messages.Latest()
+	//if err != nil {
+	//	app.serverError(w, err)
+	//	return
+	//}
+	app.render(w, r, "chat.page.tmpl", &templateData{
+		// Messages: m,
 	})
 }
 
@@ -120,8 +128,6 @@ func (app *application) deleteSnippet(w http.ResponseWriter, r *http.Request) {
 	//form := forms.New(r.Form.Get())
 	fmt.Println("deleteSnippet method...")
 }
-
-//#endregion
 
 func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// Parse the form data.
@@ -226,14 +232,11 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-//#region User handlers
 func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "signup.page.tmpl", &templateData{
 		Form: forms.New(nil),
 	})
 }
-
-//#endregion
 
 func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))

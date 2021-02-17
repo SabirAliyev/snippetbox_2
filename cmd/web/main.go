@@ -41,6 +41,11 @@ type application struct {
 		Get(int) (*models.Snippet, error)
 		Latest() ([]*models.Snippet, error)
 	}
+	messages interface {
+		Insert(string, string, string) (int, error)
+		Get(int) (*models.Message, error)
+		Latest() ([]*models.Message, error)
+	}
 	templateCache map[string]*template.Template
 	users         interface {
 		Insert(string, string, string) error

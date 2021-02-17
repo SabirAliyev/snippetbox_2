@@ -21,6 +21,13 @@ type Snippet struct {
 	Expires time.Time
 }
 
+type Message struct {
+	ID      int
+	UserId  int
+	Content string
+	Created time.Time
+}
+
 type User struct {
 	ID             int
 	Name           string

@@ -67,14 +67,29 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
-	//m, err := app.messages.Latest()
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
-	app.render(w, r, "chat.page.tmpl", &templateData{
-		// Messages: m,
-	})
+	m, err := app.messages.Latest()
+
+	fmt.Println("Error Message: ", err)
+
+	if err != nil {
+		app.serverError(w, err)
+		return
+	}
+	currentUser := app.getUser(r)
+	if currentUser != nil {
+		app.render(w, r, "chat.page.tmpl", &templateData{
+			User:     currentUser,
+			Messages: m,
+		})
+	}
+}
+
+func (app *application) getUser(r *http.Request) *models.User {
+	user, ok := r.Context().Value(contextKeyAccount).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
 // Add new createSnippetForm handler, which for now a placeholder response.

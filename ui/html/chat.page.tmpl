@@ -13,8 +13,11 @@
         <div id="chatbox"></div>
 
         <form name="message" action="">
-            <input name="usermsg" type="text" id="usermsg"/>
-            <input name="submitmsg" type="submit" id="submitmsg" value="Send"/>
+            {{with .User}}
+                <span>{{ .Name}}</span>
+                <input name="usermsg" type="text" id="usermsg"/>
+                <input name="submitmsg" type="submit" id="submitmsg" value="Send"/>
+            {{end}}
         </form>
     </div>
 {{end}}

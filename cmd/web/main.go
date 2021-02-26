@@ -27,6 +27,7 @@ const (
 	password = "pass"
 	dbname   = "snippetbox"
 )
+const contextKeyAccount = contextKey("account")
 const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 const contextKeyIsAdministrator = contextKey("isAdministrator")
 
@@ -132,6 +133,7 @@ func main() {
 		snippets:      &mysql.SnippetModel{DB: db},
 		templateCache: templateCache,
 		users:         &mysql.UserModel{DB: db},
+		messages:      &mysql.MessageModel{DB: db},
 	}
 
 	// Initialize a tls.Config struct to hold the non-default LTS settings we want server to use.

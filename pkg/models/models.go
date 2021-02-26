@@ -22,10 +22,12 @@ type Snippet struct {
 }
 
 type Message struct {
-	ID      int
-	UserId  int
-	Content string
-	Created time.Time
+	MessageID int
+	UserId    int
+	Content   string
+	Created   time.Time
+	Expires   time.Time
+	Deleted   bool
 }
 
 type User struct {

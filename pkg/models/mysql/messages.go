@@ -12,8 +12,8 @@ type MessageModel struct {
 	DB *sql.DB
 }
 
-func (m *MessageModel) Insert(userId, content, expires string) (int, error) {
-	stmt := `INSERT INTO messages (userId, content, created, expires) VALUES($1, $2, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageId`
+func (m *MessageModel) Insert(userId, content string) (int, error) {
+	stmt := `INSERT INTO messages (userid, content, created, expires) VALUES($1, $2, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageid`
 
 	result, err := m.DB.Prepare(stmt)
 	if err != nil {
@@ -21,7 +21,7 @@ func (m *MessageModel) Insert(userId, content, expires string) (int, error) {
 	}
 
 	var messageId int
-	err = result.QueryRow(userId, content, expires).Scan(&messageId)
+	err = result.QueryRow(userId, content).Scan(&messageId)
 	if err != nil {
 		return 0, err
 	}
@@ -30,7 +30,7 @@ func (m *MessageModel) Insert(userId, content, expires string) (int, error) {
 }
 
 func (m *MessageModel) Get(id int) (*models.Message, error) {
-	stmt := `SELECT messageId, userId, content, created, expires, deleted FROM snippets WHERE expires > NOW() AND id = $1`
+	stmt := `SELECT messageid, userid, content, created, expires, deleted FROM messages WHERE expires > NOW() AND messageid = $1`
 
 	row := m.DB.QueryRow(stmt, id)
 	msg := &models.Message{}
@@ -46,7 +46,7 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 }
 
 func (m *MessageModel) Latest() ([]*models.Message, error) {
-	stmt := `SELECT messageId, userId, content, created, expires FROM messages WHERE expires > NOW() ORDER BY created DESC LIMIT 10`
+	stmt := `SELECT messageid, userid, content, created, expires FROM messages WHERE expires > NOW() ORDER BY created DESC LIMIT 10`
 
 	rows, err := m.DB.Query(stmt)
 	if err != nil {
@@ -54,8 +54,7 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	}
 	defer rows.Close()
 
-	message := []*models.Message{}
-
+	var message []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
 		err = rows.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Created, &msg.Expires)
@@ -64,7 +63,6 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 		}
 		message = append(message, msg)
 	}
-
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}

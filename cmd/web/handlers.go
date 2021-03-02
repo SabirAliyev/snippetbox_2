@@ -75,13 +75,9 @@ func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-	currentUser := app.getUser(r)
-	if currentUser != nil {
-		app.render(w, r, "chat.page.tmpl", &templateData{
-			User:     currentUser,
-			Messages: m,
-		})
-	}
+	app.render(w, r, "chat.page.tmpl", &templateData{
+		Messages: m,
+	})
 }
 
 func (app *application) getUser(r *http.Request) *models.User {
@@ -100,6 +96,30 @@ func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request
 	})
 }
 
+func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	fmt.Sprintln("Parse Form error:", err)	// TEST
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	form.Required("userId", "content")
+	form.MaxLength("content", 200)
+	if !form.Valid() {
+		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
+	}
+
+	_, err = app.messages.Insert(form.Get("userId"), form.Get("content"))
+	if err != nil {
+		fmt.Sprintln("Insert error:", err) // TEST
+		app.serverError(w, err)
+		return
+	}
+	app.showChatPage(w, r)
+}
+
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	// First we call r.ParseForm() which add any data in POST request bodies to the r.PostForm map.
 	// This also works in the same way for PUT and PATCH requests. If there any errors, we use
@@ -110,7 +130,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new forms.Form struct containing the POSTed data from the form, the use the
+	// Create a new forms.Form struct containing the POSTed data from the form, we use the
 	// validation methods to check the validation.
 	form := forms.New(r.PostForm)
 	form.Required("title", "content", "expires")
@@ -131,7 +151,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the Put() method to add a string value ("Your snippet was saved successfully1") and the
-	// corresponding key ("flash") to the session data. Note yhat if there`s no session for the current user
+	// corresponding key ("flash") to the session data. Note that if there`s no session for the current user
 	// (or their session has expired) the new, empty session for them will automatically be created
 	// by the session middleware.
 	app.session.Put(r, "flash", "Snippet successfully created!")

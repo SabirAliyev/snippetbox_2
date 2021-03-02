@@ -23,7 +23,7 @@ func (m *SnippetModel) Insert(title, content, expires string) (int, error) {
 	// Write the SQL statement we want to execute. We split it over two lines
 	// for readability (which is why it`s surrounded with backquotes instead
 	// of normal double quotes).
-	stmt := `INSERT INTO snippets (title, content, created, expires) VALUES($1, $2, NOW(), NOW() + $3 * INTERVAL '1 DAY') RETURNING id`
+	stmt := `INSERT INTO snippets ("title", content, created, expires) VALUES($1, $2, NOW(), NOW() + $3 * INTERVAL '1 DAY') RETURNING id`
 
 	result, err := m.DB.Prepare(stmt)
 	if err != nil {

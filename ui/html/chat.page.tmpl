@@ -6,18 +6,20 @@
     <div id="wrapper">
         <div id="chatarea">
             <label>Chat Area:</label>
-
-            <textarea name="content"> </textarea>
+                    <textarea name="content">
+                        {{range .Messages}}
+                            <td>{{.UserId}}</td>
+                            <td>{{.Created}}</td>
+                            <td>{{.Content}}</td>
+                        {{end}}
+                    </textarea>
         </div>
-
         <div id="chatbox"></div>
+            <span>{{$.User.Name}}</span>
 
-        <form name="message" action="">
-            {{with .User}}
-                <span>{{ .Name}}</span>
-                <input name="usermsg" type="text" id="usermsg"/>
-                <input name="submitmsg" type="submit" id="submitmsg" value="Send"/>
-            {{end}}
+        <form name="message" action="/message/create" action="POST">
+            <input name="usermsg" type="text" id="usermsg"/>
+            <input name="submitmsg" type="submit" value="Send"/>
         </form>
     </div>
 {{end}}

@@ -41,6 +41,10 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	if td == nil {
 		td = &templateData{}
 	}
+	user := app.getUser(r)
+	if user != nil {
+		td.User = user
+	}
 	td.CurrentYear = time.Now().Year()
 	td.CSRFToken = nosurf.Token(r)
 

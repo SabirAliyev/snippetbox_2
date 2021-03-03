@@ -24,8 +24,9 @@ type Snippet struct {
 type Message struct {
 	MessageID int
 	UserId    int
+	User      string
 	Content   string
-	Created   time.Time
+	Date      time.Time
 	Expires   time.Time
 	Deleted   bool
 }

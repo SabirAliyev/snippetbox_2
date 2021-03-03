@@ -45,6 +45,13 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	if user != nil {
 		td.User = user
 	}
+	messages, err := app.messages.Latest()
+	if err == nil {
+		if messages != nil {
+			td.Messages = messages
+		}
+	}
+
 	td.CurrentYear = time.Now().Year()
 	td.CSRFToken = nosurf.Token(r)
 

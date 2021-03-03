@@ -13,13 +13,13 @@ type MessageModel struct {
 }
 
 func (m *MessageModel) Insert(userId, content string) (int, error) {
-	stmt := `INSERT INTO messages (userid, content, created, expires) VALUES($1, $2, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageid`
+	stmt := `INSERT INTO messages (userId, content, date, expires) 
+			VALUES($1, $2, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageId`
 
 	result, err := m.DB.Prepare(stmt)
 	if err != nil {
 		log.Fatal(err)
 	}
-
 	var messageId int
 	err = result.QueryRow(userId, content).Scan(&messageId)
 	if err != nil {
@@ -30,11 +30,13 @@ func (m *MessageModel) Insert(userId, content string) (int, error) {
 }
 
 func (m *MessageModel) Get(id int) (*models.Message, error) {
-	stmt := `SELECT messageid, userid, content, created, expires, deleted FROM messages WHERE expires > NOW() AND messageid = $1`
+	stmt := `SELECT messageId, userId, content, date, expires, deleted 
+			FROM messages 
+			WHERE expires > NOW() AND messageId = $1`
 
 	row := m.DB.QueryRow(stmt, id)
 	msg := &models.Message{}
-	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Created, &msg.Expires, &msg.Deleted)
+	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Date, &msg.Expires, &msg.Deleted)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord
@@ -46,7 +48,9 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 }
 
 func (m *MessageModel) Latest() ([]*models.Message, error) {
-	stmt := `SELECT messageid, userid, content, created, expires FROM messages WHERE expires > NOW() ORDER BY created DESC LIMIT 10`
+	stmt := `SELECT users.name, content, date, expires
+			FROM messages JOIN users ON messages.userid = users.id 
+			WHERE expires > NOW() ORDER BY date DESC LIMIT 10`
 
 	rows, err := m.DB.Query(stmt)
 	if err != nil {
@@ -57,7 +61,8 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	var message []*models.Message
 	for rows.Next() {
 		msg := &models.Message{}
-		err = rows.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Created, &msg.Expires)
+
+		err = rows.Scan(&msg.User, &msg.Content, &msg.Date, &msg.Expires)
 		if err != nil {
 			return nil, err
 		}

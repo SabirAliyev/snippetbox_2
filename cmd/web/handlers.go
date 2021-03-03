@@ -68,9 +68,6 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
 	m, err := app.messages.Latest()
-
-	fmt.Println("Error Message: ", err)
-
 	if err != nil {
 		app.serverError(w, err)
 		return
@@ -98,26 +95,26 @@ func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request
 
 func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 	err := r.ParseForm()
-	fmt.Sprintln("Parse Form error:", err)	// TEST
 	if err != nil {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
-
 	form := forms.New(r.PostForm)
-	form.Required("userId", "content")
+	form.Required("content")
 	form.MaxLength("content", 200)
 	if !form.Valid() {
 		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
 	}
+	userId := app.getUser(r).ID
+	userName := app.getUser(r).Name
 
-	_, err = app.messages.Insert(form.Get("userId"), form.Get("content"))
+	_, err = app.messages.Insert(userId, userName, form.Get("content"))
 	if err != nil {
-		fmt.Sprintln("Insert error:", err) // TEST
 		app.serverError(w, err)
 		return
+	} else {
+		app.showChatPage(w, r)
 	}
-	app.showChatPage(w, r)
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {

@@ -43,7 +43,7 @@ type application struct {
 		Latest() ([]*models.Snippet, error)
 	}
 	messages interface {
-		Insert(string, string) (int, error)
+		Insert(int, string, string) (int, error)
 		Get(int) (*models.Message, error)
 		Latest() ([]*models.Message, error)
 	}

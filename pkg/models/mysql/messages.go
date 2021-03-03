@@ -12,25 +12,24 @@ type MessageModel struct {
 	DB *sql.DB
 }
 
-func (m *MessageModel) Insert(userId, content string) (int, error) {
-	stmt := `INSERT INTO messages (userId, content, date, expires) 
-			VALUES($1, $2, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageId`
+func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
+	stmt := `INSERT INTO messages (userid, userName, content, date, expires) 
+			VALUES($1, $2, $3, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageId`
 
 	result, err := m.DB.Prepare(stmt)
 	if err != nil {
 		log.Fatal(err)
 	}
 	var messageId int
-	err = result.QueryRow(userId, content).Scan(&messageId)
+	err = result.QueryRow(userId, User, content).Scan(&messageId)
 	if err != nil {
 		return 0, err
 	}
-
 	return messageId, nil
 }
 
 func (m *MessageModel) Get(id int) (*models.Message, error) {
-	stmt := `SELECT messageId, userId, content, date, expires, deleted 
+	stmt := `SELECT messageId, userId, userName, content, date, expires, deleted 
 			FROM messages 
 			WHERE expires > NOW() AND messageId = $1`
 

@@ -12,12 +12,14 @@
                     {{end}}
                 </textarea>
         </div>
+
         <div id="chatbox"></div>
         <span>{{$.User.Name}}</span>
 
-        <form name="message" action="/message/create" action="POST">
-            <input name="usermsg" type="text" id="usermsg"/>
-            <input name="submitmsg" type="submit" value="Send"/>
+        <form action="/message/create" method="POST">
+            <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+            <input type="text" name="content"/>
+            <input type="submit" value="Send"/>
         </form>
     </div>
 {{end}}

@@ -3,12 +3,8 @@ package mysql
 import (
 	"database/sql"
 	"errors"
-	"github.com/lib/pq"
-
-	// "github.com/go-sql-driver/mysql"
+	"fmt"
 	"golang.org/x/crypto/bcrypt"
-	// "strings"
-
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
 
@@ -23,25 +19,36 @@ func (m *UserModel) Insert(name, email, password string) error {
 		return err
 	}
 
-	stmt := `INSERT INTO users (name, email, hashed_password, created) VALUES ($1, $2, $3, NOW())`
-
-	// The Exec() method to insert the user details and hashed password into the users table.
-	_, err = m.DB.Exec(stmt, name, email, string(hashedPassword))
+	// Calling the Begin() method on the connection pool creates a new sql.Tx
+	// object, which represents the in-progress database transaction.
+	tx, err := m.DB.Begin()
 	if err != nil {
-		// If this returns an error, we use the errors.As() function to check whether the error
-		// has the type *mysql.MySQLError. If it does, the error will be assigned to the MySQLError
-		// variable. We can then check whether or not the error relates to our users_uc_email key by
-		// checking the contents of the message string. If it does, we return an ErrDuplicateEmail error.
-		pqError := err.(*pq.Error)
-		if errors.As(err, &pqError) {
-			//if pqError.Code.Name() == 1062 && strings.Contains(pqError.Message, "users_uc_email") {
-			//	return models.ErrDuplicvateEmail
-			//}
-		}
 		return err
 	}
 
-	return nil
+	// Call Exec() on the transaction, passing in your statement and any parameters.
+	// It`s important to notice that tx.Exec() is called on the transaction object,
+	// just created, NOT the connection pool. Although we we`re using tx.Exec() here
+	// you can also use tx.Query() and tx.QueryRow() in exactly the same way.
+	insertStmt := `INSERT INTO users (name, email, hashed_password, created) VALUES ($1, $2, $3, NOW())`
+	user, err := m.GetUserByEmail(email)
+	if err == nil {
+		fmt.Println("User ID (2): ", user.ID)
+		if user.ID != 0 {
+			return models.ErrDuplicateEmail
+		} else {
+			_, err = tx.Exec(insertStmt, name, email, string(hashedPassword))
+			err = tx.Commit()
+		}
+	} else {
+		fmt.Println("Error: ", err)
+	}
+
+	rollBackErr := tx.Rollback()
+	if rollBackErr != nil {
+		//TODO: Handle Rollback error.
+	}
+	return err
 }
 
 func (m *UserModel) Authenticate(email, password string) (int, error) {
@@ -81,6 +88,21 @@ func (m *UserModel) Get(id int) (*models.User, error) {
 
 	stmt := `SELECT  id, name, email, created, active, administrator FROM users WHERE id = $1`
 	err := m.DB.QueryRow(stmt, id).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active, &u.Administrator)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	return u, nil
+}
+
+func (m *UserModel) GetUserByEmail(email string) (*models.User, error) {
+	u := &models.User{}
+
+	stmt := `SELECT  id, name, email, created, active, administrator FROM users WHERE email = $1`
+	err := m.DB.QueryRow(stmt, email).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active, &u.Administrator)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord

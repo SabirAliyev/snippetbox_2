@@ -113,7 +113,7 @@ func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	} else {
-		app.showChatPage(w, r)
+		http.Redirect(w, r, fmt.Sprintf("/message/chat"), http.StatusSeeOther)
 	}
 }
 
@@ -187,7 +187,7 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// add an error message to the form and re-display it.
 	err = app.users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
 	if err != nil {
-		if errors.Is(err, models.ErrDuplicvateEmail) {
+		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.Errors.Add("email", "Address is already in use")
 			app.render(w, r, "signup.page.tmpl", &templateData{Form: form})
 		} else {

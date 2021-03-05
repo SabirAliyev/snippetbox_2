@@ -44,6 +44,8 @@ func (app *application) addDefaultData(td *templateData, r *http.Request) *templ
 	user := app.getUser(r)
 	if user != nil {
 		td.User = user
+	} else {
+
 	}
 	messages, err := app.messages.Latest()
 	if err == nil {

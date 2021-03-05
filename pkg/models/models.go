@@ -10,7 +10,8 @@ var (
 	// The error about incorrect email address.
 	ErrInvalidCredentials = errors.New("models: invalid credentials")
 	// The error about duplicate emails.
-	ErrDuplicvateEmail = errors.New("models: duplicate email")
+	ErrDuplicateEmail = errors.New("models: duplicate email")
+	// ErrUserNotExist = errors.New("models: user not exist")
 )
 
 type Snippet struct {

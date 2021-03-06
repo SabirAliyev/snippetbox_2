@@ -12,8 +12,13 @@ type MessageModel struct {
 }
 
 func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
-	stmt := `INSERT INTO messages (userid, userName, content, date, expires) 
-			VALUES($1, $2, $3, NOW(), NOW() + 365 * INTERVAL '1 DAY') RETURNING messageId;`
+	stmt := `
+		INSERT INTO messages 
+		    (userid, userName, content, date, expires) 
+		VALUES 
+			($1, $2, $3, NOW(), NOW() + 365 * INTERVAL '1 DAY') 
+		RETURNING messageId;
+		`
 
 	result, err := m.DB.Prepare(stmt)
 	if err != nil {
@@ -28,9 +33,12 @@ func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
 }
 
 func (m *MessageModel) Get(id int) (*models.Message, error) {
-	stmt := `SELECT messageId, userId, userName, content, date, expires, deleted 
-			FROM messages 
-			WHERE expires > NOW() AND messageId = $1;`
+	stmt := `
+		SELECT messageId, userId, userName, content, date, expires, deleted 
+		FROM messages 
+		WHERE expires > NOW() 
+		AND messageId = $1;
+		`
 
 	row := m.DB.QueryRow(stmt, id)
 	msg := &models.Message{}
@@ -46,9 +54,13 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 }
 
 func (m *MessageModel) Latest() ([]*models.Message, error) {
-	stmt := `SELECT users.name, content, date, expires
-			FROM messages JOIN users ON messages.userid = users.id 
-			WHERE expires > NOW() AND deleted = false LIMIT 100;`
+	stmt := `
+		SELECT users.name, content, date, expires
+		FROM messages 
+		JOIN users ON messages.userid = users.userId 
+		WHERE expires > NOW() 
+		AND deleted = false LIMIT 100;
+		`
 
 	rows, err := m.DB.Query(stmt)
 	if err != nil {
@@ -72,18 +84,24 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	return message, nil
 }
 
-func (m *MessageModel) Delete(id int) (*models.Message, error) {
-	delStmt := `UPDATE messages SET deleted = true WHERE id =  $1;`
-
-	row := m.DB.QueryRow(delStmt, id)
-	msg := &models.Message{}
-	err := row.Scan(&msg.MessageID)
+func (m *MessageModel) Delete(id int) error {
+	tx, err := m.DB.Begin()
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
+		return err
 	}
-	return msg, nil
+
+	delStmt := `
+		UPDATE messages 
+		SET deleted = true 
+		WHERE messageId =  $1;
+		`
+
+	_, err = tx.Query(delStmt, id)
+	if err != nil {
+		_ = tx.Rollback()
+		return err
+	}
+
+	err = tx.Commit()
+	return err
 }

@@ -67,14 +67,19 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
-	m, err := app.messages.Latest()
-	if err != nil {
-		app.serverError(w, err)
-		return
+	user := r.Context().Value(contextKeyAccount).(*models.User)
+	if user != nil {
+		m, err := app.messages.Latest()
+		if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		app.render(w, r, "chat.page.tmpl", &templateData{
+			Messages: m,
+		})
+	} else {
+		http.Redirect(w, r, fmt.Sprintf("/home"), http.StatusSeeOther)
 	}
-	app.render(w, r, "chat.page.tmpl", &templateData{
-		Messages: m,
-	})
 }
 
 func (app *application) getUser(r *http.Request) *models.User {

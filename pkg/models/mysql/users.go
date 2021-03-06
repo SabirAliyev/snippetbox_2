@@ -3,7 +3,6 @@ package mysql
 import (
 	"database/sql"
 	"errors"
-	"fmt"
 	"golang.org/x/crypto/bcrypt"
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
@@ -26,28 +25,40 @@ func (m *UserModel) Insert(name, email, password string) error {
 		return err
 	}
 
-	// Call Exec() on the transaction, passing in your statement and any parameters.
-	// It`s important to notice that tx.Exec() is called on the transaction object,
-	// just created, NOT the connection pool. Although we we`re using tx.Exec() here
-	// you can also use tx.Query() and tx.QueryRow() in exactly the same way.
-	insertStmt := `INSERT INTO users (name, email, hashed_password, created) VALUES ($1, $2, $3, NOW())`
-	user, err := m.GetUserByEmail(email)
-	if err == nil {
-		fmt.Println("User ID (2): ", user.ID)
-		if user.ID != 0 {
-			return models.ErrDuplicateEmail
-		} else {
-			_, err = tx.Exec(insertStmt, name, email, string(hashedPassword))
-			err = tx.Commit()
-		}
+	var chkEmailStmt = `
+		SELECT COUNT(*) 
+		FROM users 
+		WHERE email = $1;
+		`
+
+	var count uint32
+	row := tx.QueryRow(chkEmailStmt, email)
+	err = row.Scan(&count)
+
+	if count > 0 {
+		return models.ErrDuplicateEmail
 	} else {
-		fmt.Println("Error: ", err)
+		var insertStmt = `
+		INSERT INTO users 
+    		(name, email, hashed_password, created) 
+    	VALUES 
+    	    ($1, $2, $3, NOW())
+    	RETURNING
+			userId;
+    	`
+
+		// Call Exec() on the transaction, passing in your statement and any parameters.
+		// It`s important to notice that tx.Exec() is called on the transaction object,
+		// just created, NOT the connection pool. Although we we`re using tx.Exec() here
+		// you can also use tx.Query() and tx.QueryRow() in exactly the same way.
+		_, err = tx.Exec(insertStmt, name, email, string(hashedPassword))
+		if err != nil {
+			_ = tx.Rollback()
+			return err
+		}
 	}
 
-	rollBackErr := tx.Rollback()
-	if rollBackErr != nil {
-		//TODO: Handle Rollback error.
-	}
+	err = tx.Commit()
 	return err
 }
 
@@ -56,7 +67,13 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	// or the user is not active, we return theErrInvalidCredentials error.
 	var id int
 	var hashedPassword []byte
-	stmt := `SELECT id, hashed_password FROM users WHERE email = $1 AND active = TRUE`
+	var stmt = `
+		SELECT userId, hashed_password 
+		FROM users 
+		WHERE email = $1 
+		AND active = TRUE;
+		`
+
 	row := m.DB.QueryRow(stmt, email)
 	err := row.Scan(&id, &hashedPassword)
 	if err != nil {
@@ -82,11 +99,15 @@ func (m *UserModel) Authenticate(email, password string) (int, error) {
 	return id, nil
 }
 
-// Verify whether a user with provided email address and password. Returns the relevant user ID.
 func (m *UserModel) Get(id int) (*models.User, error) {
 	u := &models.User{}
 
-	stmt := `SELECT  id, name, email, created, active, administrator FROM users WHERE id = $1`
+	var stmt = `
+		SELECT  userId, name, email, created, active, administrator 
+		FROM users 
+		WHERE userId = $1;
+		`
+
 	err := m.DB.QueryRow(stmt, id).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active, &u.Administrator)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -95,20 +116,6 @@ func (m *UserModel) Get(id int) (*models.User, error) {
 			return nil, err
 		}
 	}
-	return u, nil
-}
 
-func (m *UserModel) GetUserByEmail(email string) (*models.User, error) {
-	u := &models.User{}
-
-	stmt := `SELECT  id, name, email, created, active, administrator FROM users WHERE email = $1`
-	err := m.DB.QueryRow(stmt, email).Scan(&u.ID, &u.Name, &u.Email, &u.Created, &u.Active, &u.Administrator)
-	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return nil, models.ErrNoRecord
-		} else {
-			return nil, err
-		}
-	}
 	return u, nil
 }

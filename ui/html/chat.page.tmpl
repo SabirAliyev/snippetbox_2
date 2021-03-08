@@ -23,6 +23,11 @@
 
         <div style="margin-top: 20px; margin-left: 20px">
             <span style="font-style: italic; font-weight: bold">Name: {{$.User.Name}}</span>
+            {{with .Form}}
+                {{with .Errors.Get "message"}}
+                    <label class="error">{{.}}</label>
+                {{end}}
+            {{end}}
         </div>
 
         <div>

@@ -138,24 +138,14 @@ func (m *SnippetModel) Latest() ([]*models.Snippet, error) {
 }
 
 // Mark snippet as Deleted. No actually removal will be performed.
-func (m *SnippetModel) Delete(id int) error {
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return err
-	}
-
+func (m *SnippetModel) Delete() error {
 	stmt := `
 		UPDATE snippets 
 		SET deleted = true 
 		WHERE snippetId = $1;
 		`
 
-	_, err = tx.Query(stmt, id)
-	if err != nil {
-		_ = tx.Rollback()
-		return err
-	}
+	_, err := m.DB.Query(stmt)
 
-	err = tx.Commit()
 	return err
 }

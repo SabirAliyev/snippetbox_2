@@ -12,6 +12,9 @@ type MessageModel struct {
 }
 
 func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
+	if len(content) > 200 {
+		return 0, models.ErrLongMessage
+	}
 	stmt := `
 		INSERT INTO messages 
 		    (userid, userName, content, date, expires) 
@@ -68,40 +71,30 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	}
 	defer rows.Close()
 
-	var message []*models.Message
+	var messages []*models.Message
 	for rows.Next() {
-		msg := &models.Message{}
+		message := &models.Message{}
 
-		err = rows.Scan(&msg.User, &msg.Content, &msg.Date, &msg.Expires)
+		err = rows.Scan(&message.User, &message.Content, &message.Date, &message.Expires)
 		if err != nil {
 			return nil, err
 		}
-		message = append(message, msg)
+		messages = append(messages, message)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
 	}
-	return message, nil
+	return messages, nil
 }
 
-func (m *MessageModel) Delete(id int) error {
-	tx, err := m.DB.Begin()
-	if err != nil {
-		return err
-	}
-
-	delStmt := `
+func (m *MessageModel) Delete() error {
+	stmt := `
 		UPDATE messages 
 		SET deleted = true 
 		WHERE messageId =  $1;
 		`
 
-	_, err = tx.Query(delStmt, id)
-	if err != nil {
-		_ = tx.Rollback()
-		return err
-	}
+	_, err := m.DB.Query(stmt)
 
-	err = tx.Commit()
 	return err
 }

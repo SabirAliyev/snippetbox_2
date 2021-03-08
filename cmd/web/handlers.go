@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	"net/http"
@@ -67,18 +68,19 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
-	user := r.Context().Value(contextKeyAccount).(*models.User)
+	user := app.getUser(r)
 	if user != nil {
 		m, err := app.messages.Latest()
 		if err != nil {
-			app.serverError(w, err)
-			return
+			app.home(w, r)
+			log.Println("showChatPage method error: \n", err)
+		} else {
+			app.render(w, r, "chat.page.tmpl", &templateData{
+				Messages: m,
+			})
 		}
-		app.render(w, r, "chat.page.tmpl", &templateData{
-			Messages: m,
-		})
 	} else {
-		http.Redirect(w, r, fmt.Sprintf("/home"), http.StatusSeeOther)
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
 	}
 }
 
@@ -104,18 +106,18 @@ func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 		app.clientError(w, http.StatusBadRequest)
 		return
 	}
+
 	form := forms.New(r.PostForm)
 	form.Required("content")
-	form.MaxLength("content", 200)
-	if !form.Valid() {
-		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
-	}
 	userId := app.getUser(r).ID
 	userName := app.getUser(r).Name
 
 	_, err = app.messages.Insert(userId, userName, form.Get("content"))
 	if err != nil {
-		app.serverError(w, err)
+		if errors.Is(err, models.ErrLongMessage) {
+			form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+			app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
+		}
 		return
 	} else {
 		http.Redirect(w, r, fmt.Sprintf("/message/chat"), http.StatusSeeOther)

@@ -18,6 +18,7 @@ func (app *application) routes() http.Handler {
 	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate, app.authenticateCurrentUser, app.authenticateAsAdmin)
 
 	mux := pat.New()
+
 	// Snippet
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createSnippetForm))
@@ -40,6 +41,8 @@ func (app *application) routes() http.Handler {
 	// Test
 	mux.Get("/ping", http.HandlerFunc(ping))
 	// /Test
+
+	mux.Get("/ping", http.HandlerFunc(ping))
 
 	// Create a file server which serves files out of the "./ui/static" directory. Note that the path given
 	// to the http.Dir function is relative to the project directory root.

@@ -109,18 +109,21 @@ func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 
 	form := forms.New(r.PostForm)
 	form.Required("content")
+	form.MaxLength("content", 200)
+
 	userId := app.getUser(r).ID
 	userName := app.getUser(r).Name
 
-	_, err = app.messages.Insert(userId, userName, form.Get("content"))
-	if err != nil {
-		if errors.Is(err, models.ErrLongMessage) {
-			form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
-			app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
-		}
-		return
+	if form.Valid() == false {
+		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
+
 	} else {
+		_, err = app.messages.Insert(userId, userName, form.Get("content"))
 		http.Redirect(w, r, fmt.Sprintf("/message/chat"), http.StatusSeeOther)
+		if err != nil {
+			return
+		}
 	}
 }
 

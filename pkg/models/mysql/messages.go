@@ -12,9 +12,6 @@ type MessageModel struct {
 }
 
 func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
-	if len(content) > 200 {
-		return 0, models.ErrLongMessage
-	}
 	stmt := `
 		INSERT INTO messages 
 		    (userid, userName, content, date, expires) 

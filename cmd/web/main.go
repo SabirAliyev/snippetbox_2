@@ -13,7 +13,7 @@ import (
 	"sabiraliyev.net/snippetbox/pkg/models"
 	"time"
 
-	"sabiraliyev.net/snippetbox/pkg/models/mysql"
+	"sabiraliyev.net/snippetbox/pkg/models/postgresql"
 
 	_ "github.com/lib/pq"
 )
@@ -130,10 +130,10 @@ func main() {
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		session:       session,
-		snippets:      &mysql.SnippetModel{DB: db},
+		snippets:      &postgresql.SnippetModel{DB: db},
 		templateCache: templateCache,
-		users:         &mysql.UserModel{DB: db},
-		messages:      &mysql.MessageModel{DB: db},
+		users:         &postgresql.UserModel{DB: db},
+		messages:      &postgresql.MessageModel{DB: db},
 	}
 
 	// Initialize a tls.Config struct to hold the non-default LTS settings we want server to use.

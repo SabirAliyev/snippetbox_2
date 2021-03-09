@@ -11,8 +11,6 @@ var (
 	ErrInvalidCredentials = errors.New("models: invalid credentials")
 	// The error about duplicate emails.
 	ErrDuplicateEmail = errors.New("models: duplicate email")
-	// The error about too long message in chat.
-	ErrLongMessage = errors.New("models: message is too long")
 )
 
 type Snippet struct {

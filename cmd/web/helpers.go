@@ -90,7 +90,7 @@ func (app *application) render(w http.ResponseWriter, r *http.Request, name stri
 	}
 	// Write the contents of the buffer to the http.ResponseWriter. Again, this is another time
 	// where we pass our http.ResponseWriter to a function that takes an io.Writer.
-	buf.WriteTo(w)
+	_, _ = buf.WriteTo(w)
 }
 
 func (app *application) isAuthenticated(r *http.Request) bool {

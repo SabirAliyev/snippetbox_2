@@ -1,4 +1,4 @@
-package mysql
+package postgresql
 
 import (
 	"reflect"
@@ -10,7 +10,7 @@ import (
 func TestUserModelGet(t *testing.T) {
 	// Skip the test if the `-short` flag is provided when running the test.
 	if testing.Short() {
-		t.Skip("mysql: skipping integration test")
+		t.Skip("postgresql: skipping integration test")
 	}
 
 	// Set up a suite of table-driven tests and expected results.

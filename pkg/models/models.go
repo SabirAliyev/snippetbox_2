@@ -10,7 +10,7 @@ var (
 	// The error about incorrect email address.
 	ErrInvalidCredentials = errors.New("models: invalid credentials")
 	// The error about duplicate emails.
-	ErrDuplicvateEmail = errors.New("models: duplicate email")
+	ErrDuplicateEmail = errors.New("models: duplicate email")
 )
 
 type Snippet struct {
@@ -19,6 +19,16 @@ type Snippet struct {
 	Content string
 	Created time.Time
 	Expires time.Time
+}
+
+type Message struct {
+	MessageID int
+	UserId    int
+	User      string
+	Content   string
+	Date      time.Time
+	Expires   time.Time
+	Deleted   bool
 }
 
 type User struct {

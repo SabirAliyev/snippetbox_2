@@ -117,3 +117,19 @@ func (app *application) authenticateAsAdmin(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+func (app *application) authenticateCurrentUser(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		user, err := app.users.Get(app.session.GetInt(r, "authenticatedUserID"))
+		if errors.Is(err, models.ErrNoRecord) || !user.Active {
+			app.session.Remove(r, "authenticatedUserID")
+			next.ServeHTTP(w, r)
+			return
+		} else if err != nil {
+			app.serverError(w, err)
+			return
+		}
+		ctx := context.WithValue(r.Context(), contextKeyAccount, user)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}

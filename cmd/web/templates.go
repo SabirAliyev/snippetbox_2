@@ -20,6 +20,9 @@ type templateData struct {
 	IsAdministrator bool
 	Snippet         *models.Snippet
 	Snippets        []*models.Snippet
+	Message         *models.Message
+	Messages        []*models.Message
+	User            *models.User
 }
 
 // Create a humanDate function which returns a nicely formatted string representation of a time.Time object.

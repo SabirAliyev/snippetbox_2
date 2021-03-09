@@ -17,24 +17,25 @@
             <div>
                 <a href="/">Home</a>
                 {{if .IsAuthenticated}}
-                <a href="/snippet/create">Create snippet</a>
+                    <a href="/snippet/create">Create snippet</a>
                 {{end}}
             </div>
             <div>
                 {{if .IsAuthenticated}}
+                    <a href="/message/chat">Chat</a>
+                    {{if .IsAdministrator}}
+                        <a href="/snippet/admin">Admin Panel</a>
+                    {{end}}
+
                     <form action="/user/logout" method="POST">
                         <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
                         <button>Logout</button>
                     </form>
-                    {{if .IsAdministrator}}
-                        <a href="/snippet/admin">Admin Panel</a>
-                    {{end}}
                 {{else}}
                     <a href="/user/signup">Signup</a>
                     <a href="/user/login">Login</a>
                 {{end}}
             </div>
-
         </nav>
 
         <main>

@@ -3,14 +3,13 @@ package main
 import (
 	"errors"
 	"fmt"
-	"net/http"
+	"log"
 	"strconv"
 
+	"net/http"
 	"sabiraliyev.net/snippetbox/pkg/forms"
 	"sabiraliyev.net/snippetbox/pkg/models"
 )
-
-//#region Snippet handlers
 
 // Change the signature of the home handler so it is defined as a method against *application.
 func (app *application) home(w http.ResponseWriter, r *http.Request) {
@@ -63,10 +62,34 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 		app.serverError(w, err)
 		return
 	}
-
 	app.render(w, r, "admin.page.tmpl", &templateData{
 		Snippets: s,
 	})
+}
+
+func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
+	user := app.getUser(r)
+	if user != nil {
+		m, err := app.messages.Latest()
+		if err != nil {
+			app.home(w, r)
+			log.Println("showChatPage method error: \n", err)
+		} else {
+			app.render(w, r, "chat.page.tmpl", &templateData{
+				Messages: m,
+			})
+		}
+	} else {
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
+	}
+}
+
+func (app *application) getUser(r *http.Request) *models.User {
+	user, ok := r.Context().Value(contextKeyAccount).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
 // Add new createSnippetForm handler, which for now a placeholder response.
@@ -75,6 +98,33 @@ func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request
 		// Pass the new empty form.Form object to the template.
 		Form: forms.New(nil),
 	})
+}
+
+func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	form.Required("content")
+	form.MaxLength("content", 200)
+
+	userId := app.getUser(r).ID
+	userName := app.getUser(r).Name
+
+	if form.Valid() == false {
+		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
+
+	} else {
+		_, err = app.messages.Insert(userId, userName, form.Get("content"))
+		http.Redirect(w, r, fmt.Sprintf("/message/chat"), http.StatusSeeOther)
+		if err != nil {
+			return
+		}
+	}
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +137,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new forms.Form struct containing the POSTed data from the form, the use the
+	// Create a new forms.Form struct containing the POSTed data from the form, we use the
 	// validation methods to check the validation.
 	form := forms.New(r.PostForm)
 	form.Required("title", "content", "expires")
@@ -108,7 +158,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the Put() method to add a string value ("Your snippet was saved successfully1") and the
-	// corresponding key ("flash") to the session data. Note yhat if there`s no session for the current user
+	// corresponding key ("flash") to the session data. Note that if there`s no session for the current user
 	// (or their session has expired) the new, empty session for them will automatically be created
 	// by the session middleware.
 	app.session.Put(r, "flash", "Snippet successfully created!")
@@ -120,8 +170,6 @@ func (app *application) deleteSnippet(w http.ResponseWriter, r *http.Request) {
 	//form := forms.New(r.Form.Get())
 	fmt.Println("deleteSnippet method...")
 }
-
-//#endregion
 
 func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// Parse the form data.
@@ -149,7 +197,7 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// add an error message to the form and re-display it.
 	err = app.users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
 	if err != nil {
-		if errors.Is(err, models.ErrDuplicvateEmail) {
+		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.Errors.Add("email", "Address is already in use")
 			app.render(w, r, "signup.page.tmpl", &templateData{Form: form})
 		} else {
@@ -226,14 +274,11 @@ func (app *application) logoutUser(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/", http.StatusSeeOther)
 }
 
-//#region User handlers
 func (app *application) signupUserForm(w http.ResponseWriter, r *http.Request) {
 	app.render(w, r, "signup.page.tmpl", &templateData{
 		Form: forms.New(nil),
 	})
 }
-
-//#endregion
 
 func ping(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte("OK"))

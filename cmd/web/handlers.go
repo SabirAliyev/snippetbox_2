@@ -120,10 +120,38 @@ func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 
 	} else {
 		_, err = app.messages.Insert(userId, userName, form.Get("content"))
-		http.Redirect(w, r, fmt.Sprintf("/message/chat"), http.StatusSeeOther)
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 		if err != nil {
 			return
 		}
+	}
+}
+
+func (app *application) deleteMessage(w http.ResponseWriter, r *http.Request) {
+	fmt.Println("delete method...")
+	// Pat doesn`t strip the colon from the names capture key,
+	// so we need to get the value of ":id" from the query string instead of "id".
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+	if err != nil || id < 1 {
+		// redirect
+		return
+	}
+
+	//row, err := app.messages.Delete(id)
+	fmt.Println("Removal Message Id: ", id)
+
+	msg, err := app.messages.Delete(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			// app.notFound(w)
+		} else {
+			// app.serverError(w, err)
+		}
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		return
+	} else {
+		fmt.Println("Removed message id: ", msg.MessageID)
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 	}
 }
 

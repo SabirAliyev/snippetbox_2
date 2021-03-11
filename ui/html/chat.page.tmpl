@@ -8,11 +8,13 @@
         <div id="chat-table" style="width: 800px; height: 300px; overflow: auto;">
             <table style="line-height: normal">
                 {{range .Messages}}
-                    <tr>
-                        <td style="width: 100px">{{.User}}</td>
-                        <td style="width: 300px">{{humanDate .Date}}</td>
-                        <td>{{.Content}}</td>
-                    </tr>
+                <tr>
+                    <td style="width: 100px">{{.User}}</td>
+                    <td style="width: 100px">{{humanDate .Date}}</td>
+                    <td>{{.Content}}</td>
+                    <td style="width: 50px"><a href="/message/{{.MessageID}}/edit">edit</a></td>
+                    <td style="width: 50px"><a href="/message/{{.MessageID}}/delete">delete</a></td>
+                </tr>
                 {{end}}
             </table>
             <script>
@@ -33,7 +35,7 @@
         <div>
             <form action="/message/create" method="POST">
                 <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
-                <input type="text" name="content" style="width: 700px; height: 40px; position: relative;"/>
+                <input type="text" name="content" style="width: 700px; height: 40px; position: relative;">
                 <input type="submit" value="Send" style="height: 50px;/">
             </form>
         </div>

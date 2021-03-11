@@ -34,15 +34,16 @@ func (m *MessageModel) Insert(userId int, User, content string) (int, error) {
 
 func (m *MessageModel) Get(id int) (*models.Message, error) {
 	stmt := `
-		SELECT messageId, userId, userName, content, date, expires, deleted 
+		SELECT messageId, userId, userName, content, date, expires, edited, status 
 		FROM messages 
 		WHERE expires > NOW() 
-		AND messageId = $1;
+		AND messageId = $1
+		AND status != 2;
 		`
 
 	row := m.DB.QueryRow(stmt, id)
 	msg := &models.Message{}
-	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Date, &msg.Expires, &msg.Deleted)
+	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord
@@ -55,11 +56,12 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 
 func (m *MessageModel) Latest() ([]*models.Message, error) {
 	stmt := `
-		SELECT users.name, content, date, expires
+		SELECT messageId, users.name, content, date, expires, edited, status
 		FROM messages 
 		JOIN users ON messages.userid = users.userId 
 		WHERE expires > NOW() 
-		AND deleted = false LIMIT 100;
+		AND status != 2 
+		LIMIT 100;
 		`
 
 	rows, err := m.DB.Query(stmt)
@@ -70,13 +72,13 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 
 	var messages []*models.Message
 	for rows.Next() {
-		message := &models.Message{}
+		msg := &models.Message{}
 
-		err = rows.Scan(&message.User, &message.Content, &message.Date, &message.Expires)
+		err = rows.Scan(&msg.MessageID, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status)
 		if err != nil {
 			return nil, err
 		}
-		messages = append(messages, message)
+		messages = append(messages, msg)
 	}
 	if err = rows.Err(); err != nil {
 		return nil, err
@@ -84,14 +86,22 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	return messages, nil
 }
 
-func (m *MessageModel) Delete() error {
+func (m *MessageModel) Delete(id int) (*models.Message, error) {
 	stmt := `
 		UPDATE messages 
-		SET deleted = true 
+		SET status = 2 
 		WHERE messageId =  $1;
 		`
 
-	_, err := m.DB.Query(stmt)
-
-	return err
+	row := m.DB.QueryRow(stmt, id)
+	msg := &models.Message{}
+	err := row.Scan(&msg.MessageID)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, models.ErrNoRecord
+		} else {
+			return nil, err
+		}
+	}
+	return msg, nil
 }

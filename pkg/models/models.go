@@ -28,7 +28,8 @@ type Message struct {
 	Content   string
 	Date      time.Time
 	Expires   time.Time
-	Deleted   bool
+	Edited    bool
+	Status    int
 }
 
 type User struct {

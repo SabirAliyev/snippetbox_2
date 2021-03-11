@@ -46,6 +46,7 @@ type application struct {
 		Insert(int, string, string) (int, error)
 		Get(int) (*models.Message, error)
 		Latest() ([]*models.Message, error)
+		Delete(int) (*models.Message, error)
 	}
 	templateCache map[string]*template.Template
 	users         interface {

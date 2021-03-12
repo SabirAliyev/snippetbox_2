@@ -128,17 +128,11 @@ func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) deleteMessage(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("delete method...")
-	// Pat doesn`t strip the colon from the names capture key,
-	// so we need to get the value of ":id" from the query string instead of "id".
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
 	if err != nil || id < 1 {
-		// redirect
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 		return
 	}
-
-	//row, err := app.messages.Delete(id)
-	fmt.Println("Removal Message Id: ", id)
 
 	msg, err := app.messages.Delete(id)
 	if err != nil {
@@ -152,6 +146,71 @@ func (app *application) deleteMessage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		fmt.Println("Removed message id: ", msg.MessageID)
 		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+	}
+}
+
+func (app *application) showEditMessagePage(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+	fmt.Println("Show message ID: ", id)
+	if err != nil || id < 1 {
+		app.notFound(w)
+	}
+	m, err := app.messages.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.render(w, r, "edit.message.page.tmpl", &templateData{
+		Message: m,
+	})
+}
+
+func (app *application) saveEditedMessage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	idStr := form.Get("id")
+	id, err := strconv.Atoi(idStr)
+	form.Required("content")
+	form.MaxLength("content", 200)
+
+	message, err := app.messages.Get(id)
+	if errors.Is(err, models.ErrNoRecord) {
+		app.notFound(w)
+	} else {
+		app.serverError(w, err)
+	}
+
+	if form.Valid() == false {
+		//TODO: UI error not renders.
+		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		app.render(w, r, "edit.message.page.tmpl", &templateData{
+			Message: message,
+		})
+	} else {
+		fmt.Println("Updating...")
+		if id != 0 {
+			_, err = app.messages.Update(id, form.Get("content"))
+			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		} else {
+			fmt.Println("Edit message ID is 0.") // TEST
+			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		}
+		if err != nil {
+			return
+		}
+	}
+	if err != nil {
+		return
 	}
 }
 

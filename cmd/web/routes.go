@@ -26,6 +26,8 @@ func (app *application) routes() http.Handler {
 	mux.Get("/message/chat", dynamicMiddleware.ThenFunc(app.showChatPage))
 	mux.Post("/message/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createMessage))
 	mux.Get("/message/:id/delete", dynamicMiddleware.ThenFunc(app.deleteMessage))
+	mux.Get("/message/:id/edit", dynamicMiddleware.ThenFunc(app.showEditMessagePage))
+	mux.Post("/message/save", dynamicMiddleware.ThenFunc(app.saveEditedMessage))
 	mux.Get("/snippet/admin", dynamicMiddleware.ThenFunc(app.showAdminPage))
 	mux.Post("/snippet/delete", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.deleteSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))

@@ -37,13 +37,12 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 		SELECT messageId, userId, userName, content, date, expires, edited, status 
 		FROM messages 
 		WHERE expires > NOW() 
-		AND messageId = $1
-		AND status != 2;
+		AND messageId = $1;
 		`
 
 	row := m.DB.QueryRow(stmt, id)
 	msg := &models.Message{}
-	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status)
+	err := row.Scan(&msg.MessageID, &msg.UserId, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status)
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, models.ErrNoRecord
@@ -84,6 +83,26 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 		return nil, err
 	}
 	return messages, nil
+}
+
+func (m *MessageModel) Update(id int, content string) (int, error) {
+	stmt := `
+		UPDATE messages 
+		SET content = $2 
+		WHERE messageId =  $1;
+		`
+
+	result, err := m.DB.Prepare(stmt)
+	if err != nil {
+		log.Fatal(err)
+	}
+	var messageId int
+	err = result.QueryRow(id, content).Scan(&messageId)
+	if err != nil {
+		return 0, err
+	}
+
+	return messageId, nil
 }
 
 func (m *MessageModel) Delete(id int) (*models.Message, error) {

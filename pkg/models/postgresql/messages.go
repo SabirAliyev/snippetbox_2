@@ -55,7 +55,8 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 
 func (m *MessageModel) Latest() ([]*models.Message, error) {
 	stmt := `
-		SELECT messageId, users.name, content, date, expires, edited, status
+		SELECT messageId, users.name, content, date, expires, edited, status, 
+		(CASE WHEN DATE_DIFF('minute', date::timestamp, NOW()::timestamp) < 60 THEN true ELSE false END) as editable 
 		FROM messages 
 		JOIN users ON messages.userid = users.userId 
 		WHERE expires > NOW() 
@@ -73,7 +74,7 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	for rows.Next() {
 		msg := &models.Message{}
 
-		err = rows.Scan(&msg.MessageID, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status)
+		err = rows.Scan(&msg.MessageID, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status, &msg.Editable)
 		if err != nil {
 			return nil, err
 		}

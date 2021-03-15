@@ -8,13 +8,17 @@
         <div id="chat-table" style="width: 800px; height: 300px; overflow: auto;">
             <table style="line-height: normal">
                 {{range .Messages}}
-                <tr>
-                    <td style="width: 100px">{{.User}}</td>
-                    <td style="width: 100px">{{humanDate .Date}}</td>
-                    <td>{{.Content}}</td>
-                    <td style="width: 50px"><a href="/message/{{.MessageID}}/edit">edit</a></td>
-                    <td style="width: 50px"><a href="/message/{{.MessageID}}/delete">delete</a></td>
-                </tr>
+                    <tr>
+                        <td style="width: 100px">{{.User}}</td>
+                        <td style="width: 100px">{{humanDate .Date}}</td>
+                        <td>{{.Content}}</td>
+                        {{if .Editable}}
+                            <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/edit">edit</a>
+                            </td>
+                        {{end}}
+                        <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/delete">delete</a>
+                        </td>
+                    </tr>
                 {{end}}
             </table>
             <script>

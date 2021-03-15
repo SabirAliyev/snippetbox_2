@@ -28,6 +28,7 @@ type Message struct {
 	Content   string
 	Date      time.Time
 	Expires   time.Time
+	Editable  bool
 	Edited    bool
 	Status    int
 }

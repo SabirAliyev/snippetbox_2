@@ -53,10 +53,12 @@ func (m *MessageModel) Get(id int) (*models.Message, error) {
 	return msg, nil
 }
 
-func (m *MessageModel) Latest() ([]*models.Message, error) {
+func (m *MessageModel) Latest(currentUserId int) ([]*models.Message, error) {
 	stmt := `
 		SELECT messageId, users.name, content, date, expires, edited, status, 
-		(CASE WHEN DATE_DIFF('minute', date::timestamp, NOW()::timestamp) < 60 THEN true ELSE false END) as editable 
+		(CASE WHEN DATE_DIFF('minute', date::timestamp, NOW()::timestamp) < 60 THEN true ELSE false END) as editable, 
+		(CASE WHEN DATE_DIFF('hour', date::timestamp, NOW()::timestamp) < 24 THEN true ELSE false END) as removable, 
+		(CASE WHEN messages.userId = $1 THEN true ELSE false END) as createdByUser 
 		FROM messages 
 		JOIN users ON messages.userid = users.userId 
 		WHERE expires > NOW() 
@@ -64,7 +66,7 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 		LIMIT 100;
 		`
 
-	rows, err := m.DB.Query(stmt)
+	rows, err := m.DB.Query(stmt, currentUserId)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +76,7 @@ func (m *MessageModel) Latest() ([]*models.Message, error) {
 	for rows.Next() {
 		msg := &models.Message{}
 
-		err = rows.Scan(&msg.MessageID, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status, &msg.Editable)
+		err = rows.Scan(&msg.MessageID, &msg.User, &msg.Content, &msg.Date, &msg.Expires, &msg.Edited, &msg.Status, &msg.Editable, &msg.Removable, &msg.CreatedByUser)
 		if err != nil {
 			return nil, err
 		}

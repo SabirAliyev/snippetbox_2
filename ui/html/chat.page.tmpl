@@ -12,12 +12,14 @@
                         <td style="width: 100px">{{.User}}</td>
                         <td style="width: 100px">{{humanDate .Date}}</td>
                         <td>{{.Content}}</td>
-                        {{if .Editable}}
-                            <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/edit">edit</a>
-                            </td>
+                        {{if .CreatedByUser}}
+                            {{if .Editable}}
+                                <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/edit">edit</a></td>
+                            {{end}}
+                            {{if .Removable}}
+                                <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/delete">delete</a></td>
+                            {{end}}
                         {{end}}
-                        <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/delete">delete</a>
-                        </td>
                     </tr>
                 {{end}}
             </table>

@@ -70,7 +70,7 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
 	user := app.getUser(r)
 	if user != nil {
-		m, err := app.messages.Latest()
+		m, err := app.messages.Latest(user.ID)
 		if err != nil {
 			app.home(w, r)
 			log.Println("showChatPage method error: \n", err)
@@ -184,25 +184,23 @@ func (app *application) saveEditedMessage(w http.ResponseWriter, r *http.Request
 	form.MaxLength("content", 200)
 
 	message, err := app.messages.Get(id)
-	if errors.Is(err, models.ErrNoRecord) {
-		app.notFound(w)
-	} else {
-		app.serverError(w, err)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
 	}
-
 	if form.Valid() == false {
-		//TODO: UI error not renders.
 		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
 		app.render(w, r, "edit.message.page.tmpl", &templateData{
 			Message: message,
 		})
 	} else {
-		fmt.Println("Updating...")
 		if id != 0 {
 			_, err = app.messages.Update(id, form.Get("content"))
 			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 		} else {
-			fmt.Println("Edit message ID is 0.") // TEST
 			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 		}
 		if err != nil {

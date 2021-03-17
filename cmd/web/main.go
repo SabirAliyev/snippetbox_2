@@ -45,7 +45,7 @@ type application struct {
 	messages interface {
 		Insert(int, string, string) (int, error)
 		Get(int) (*models.Message, error)
-		Latest() ([]*models.Message, error)
+		Latest(int) ([]*models.Message, error)
 		Delete(int) (*models.Message, error)
 		Update(int, string) (int, error)
 	}

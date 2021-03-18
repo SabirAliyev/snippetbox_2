@@ -13,7 +13,7 @@ import (
 	"sabiraliyev.net/snippetbox/pkg/models"
 	"time"
 
-	"sabiraliyev.net/snippetbox/pkg/models/mysql"
+	"sabiraliyev.net/snippetbox/pkg/models/postgresql"
 
 	_ "github.com/lib/pq"
 )
@@ -27,6 +27,7 @@ const (
 	password = "pass"
 	dbname   = "snippetbox"
 )
+const contextKeyAccount = contextKey("account")
 const contextKeyIsAuthenticated = contextKey("isAuthenticated")
 const contextKeyIsAdministrator = contextKey("isAdministrator")
 
@@ -42,9 +43,11 @@ type application struct {
 		Latest() ([]*models.Snippet, error)
 	}
 	messages interface {
-		Insert(string, string, string) (int, error)
+		Insert(int, string, string) (int, error)
 		Get(int) (*models.Message, error)
-		Latest() ([]*models.Message, error)
+		Latest(int) ([]*models.Message, error)
+		Delete(int) (*models.Message, error)
+		Update(int, string, bool) (int, error)
 	}
 	templateCache map[string]*template.Template
 	users         interface {
@@ -129,9 +132,10 @@ func main() {
 		errorLog:      errorLog,
 		infoLog:       infoLog,
 		session:       session,
-		snippets:      &mysql.SnippetModel{DB: db},
+		snippets:      &postgresql.SnippetModel{DB: db},
 		templateCache: templateCache,
-		users:         &mysql.UserModel{DB: db},
+		users:         &postgresql.UserModel{DB: db},
+		messages:      &postgresql.MessageModel{DB: db},
 	}
 
 	// Initialize a tls.Config struct to hold the non-default LTS settings we want server to use.

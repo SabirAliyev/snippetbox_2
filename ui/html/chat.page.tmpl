@@ -4,17 +4,51 @@
 
 {{define "main"}}
     <div id="wrapper">
-        <div id="chatarea">
-            <label>Chat Area:</label>
-
-            <textarea name="content"> </textarea>
+        <label>Chat Area:</label>
+        <div id="chat-table" style="width: 800px; height: 300px; overflow: auto;">
+            <table style="line-height: normal">
+                {{range .Messages}}
+                    <tr>
+                        <td style="width: 100px">{{.User}}</td>
+                        <td style="width: 100px">{{humanDate .Date}}</td>
+                        {{if .Edited}}
+                            <td style="width: 80px"> edited</td>
+                        {{else}}
+                            <td style="width: 80px"></td>
+                        {{end}}
+                        <td style="align-content: end">{{.Content}}</td>
+                        {{if .CreatedByUser}}
+                            {{if .Editable}}
+                                <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/edit">edit</a></td>
+                            {{end}}
+                            {{if .Removable}}
+                                <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/delete">delete</a></td>
+                            {{end}}
+                        {{end}}
+                    </tr>
+                {{end}}
+            </table>
+            <script>
+                const table = document.getElementById("chat-table");
+                table.scrollTop = table.scrollHeight;
+            </script>
         </div>
 
-        <div id="chatbox"></div>
+        <div style="margin-top: 20px; margin-left: 20px">
+            <span style="font-style: italic; font-weight: bold">Name: {{$.User.Name}}</span>
+            {{with .Form}}
+                {{with .Errors.Get "message"}}
+                    <label class="error">{{.}}</label>
+                {{end}}
+            {{end}}
+        </div>
 
-        <form name="message" action="">
-            <input name="usermsg" type="text" id="usermsg"/>
-            <input name="submitmsg" type="submit" id="submitmsg" value="Send"/>
-        </form>
+        <div>
+            <form action="/message/create" method="POST">
+                <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+                <input type="text" name="content" style="width: 700px; height: 40px; position: relative;">
+                <input type="submit" value="Send" style="height: 50px;/">
+            </form>
+        </div>
     </div>
 {{end}}

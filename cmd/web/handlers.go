@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 
 	"net/http"
@@ -67,14 +68,28 @@ func (app *application) showAdminPage(w http.ResponseWriter, r *http.Request) {
 }
 
 func (app *application) showChatPage(w http.ResponseWriter, r *http.Request) {
-	//m, err := app.messages.Latest()
-	//if err != nil {
-	//	app.serverError(w, err)
-	//	return
-	//}
-	app.render(w, r, "chat.page.tmpl", &templateData{
-		// Messages: m,
-	})
+	user := app.getUser(r)
+	if user != nil {
+		m, err := app.messages.Latest(user.ID)
+		if err != nil {
+			app.home(w, r)
+			log.Println("showChatPage method error: \n", err)
+		} else {
+			app.render(w, r, "chat.page.tmpl", &templateData{
+				Messages: m,
+			})
+		}
+	} else {
+		http.Redirect(w, r, "/home", http.StatusSeeOther)
+	}
+}
+
+func (app *application) getUser(r *http.Request) *models.User {
+	user, ok := r.Context().Value(contextKeyAccount).(*models.User)
+	if !ok {
+		return nil
+	}
+	return user
 }
 
 // Add new createSnippetForm handler, which for now a placeholder response.
@@ -83,6 +98,126 @@ func (app *application) createSnippetForm(w http.ResponseWriter, r *http.Request
 		// Pass the new empty form.Form object to the template.
 		Form: forms.New(nil),
 	})
+}
+
+func (app *application) createMessage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	form.Required("content")
+	form.MaxLength("content", 200)
+
+	userId := app.getUser(r).ID
+	userName := app.getUser(r).Name
+
+	if form.Valid() == false {
+		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		app.render(w, r, "chat.page.tmpl", &templateData{Form: form})
+
+	} else {
+		_, err = app.messages.Insert(userId, userName, form.Get("content"))
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		if err != nil {
+			return
+		}
+	}
+}
+
+func (app *application) deleteMessage(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+	if err != nil || id < 1 {
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		return
+	}
+
+	msg, err := app.messages.Delete(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			// app.notFound(w)
+		} else {
+			// app.serverError(w, err)
+		}
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		return
+	} else {
+		fmt.Println("Removed message id: ", msg.MessageID)
+		http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+	}
+}
+
+func (app *application) showEditMessagePage(w http.ResponseWriter, r *http.Request) {
+	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
+	if err != nil || id < 1 {
+		app.notFound(w)
+	}
+	m, err := app.messages.Get(id)
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+		return
+	}
+
+	app.render(w, r, "edit.message.page.tmpl", &templateData{
+		Message: m,
+	})
+}
+
+func (app *application) saveEditedMessage(w http.ResponseWriter, r *http.Request) {
+	err := r.ParseForm()
+	if err != nil {
+		app.clientError(w, http.StatusBadRequest)
+		return
+	}
+
+	form := forms.New(r.PostForm)
+	idStr := form.Get("id")
+	id, err := strconv.Atoi(idStr)
+	form.Required("content")
+	form.MaxLength("content", 200)
+
+	content := form.Get("content")
+	message, err := app.messages.Get(id)
+	var edited bool
+	if err != nil {
+		if errors.Is(err, models.ErrNoRecord) {
+			app.notFound(w)
+		} else {
+			app.serverError(w, err)
+		}
+	}
+
+	if content != message.Content {
+		edited = true
+	}
+
+	if form.Valid() == false {
+		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		message.Content = content
+		app.render(w, r, "edit.message.page.tmpl", &templateData{
+			Form:    form,
+			Message: message,
+		})
+	} else {
+		if id != 0 {
+			_, err = app.messages.Update(id, content, edited)
+			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		} else {
+			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
+		}
+		if err != nil {
+			return
+		}
+	}
+	if err != nil {
+		return
+	}
 }
 
 func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
@@ -95,7 +230,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create a new forms.Form struct containing the POSTed data from the form, the use the
+	// Create a new forms.Form struct containing the POSTed data from the form, we use the
 	// validation methods to check the validation.
 	form := forms.New(r.PostForm)
 	form.Required("title", "content", "expires")
@@ -116,7 +251,7 @@ func (app *application) createSnippet(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Use the Put() method to add a string value ("Your snippet was saved successfully1") and the
-	// corresponding key ("flash") to the session data. Note yhat if there`s no session for the current user
+	// corresponding key ("flash") to the session data. Note that if there`s no session for the current user
 	// (or their session has expired) the new, empty session for them will automatically be created
 	// by the session middleware.
 	app.session.Put(r, "flash", "Snippet successfully created!")
@@ -155,7 +290,7 @@ func (app *application) signupUser(w http.ResponseWriter, r *http.Request) {
 	// add an error message to the form and re-display it.
 	err = app.users.Insert(form.Get("name"), form.Get("email"), form.Get("password"))
 	if err != nil {
-		if errors.Is(err, models.ErrDuplicvateEmail) {
+		if errors.Is(err, models.ErrDuplicateEmail) {
 			form.Errors.Add("email", "Address is already in use")
 			app.render(w, r, "signup.page.tmpl", &templateData{Form: form})
 		} else {

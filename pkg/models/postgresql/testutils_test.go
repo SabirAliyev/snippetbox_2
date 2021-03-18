@@ -1,4 +1,4 @@
-package mysql
+package postgresql
 
 import (
 	"database/sql"
@@ -11,7 +11,7 @@ func newTestDB(t *testing.T) (*sql.DB, func()) {
 	// scripts contains multiple SQL statements, we need to use the 'muliStatements=true' parameter
 	// in our DSN. This instructs our MySQL driver to support executing multiple SQL statements
 	// in one db.Exec()` call.
-	db, err := sql.Open("mysql", "test_web:pass@/test_snippetbox?parseTime=true&multiStatements=true")
+	db, err := sql.Open("postgresql", "test_web:pass@/test_snippetbox?parseTime=true&multiStatements=true")
 	if err != nil {
 		t.Fatal(err)
 	}

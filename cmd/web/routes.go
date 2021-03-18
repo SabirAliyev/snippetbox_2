@@ -15,30 +15,37 @@ func (app *application) routes() http.Handler {
 
 	// The middleware chain containing the middleware specific to our dynamic application routes.
 	// Using the noSurf middleware on all 'dynamic' routes with authenticate() and authenticateAsAdmin() middleware.
-	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate, app.authenticateAsAdmin)
+	dynamicMiddleware := alice.New(app.session.Enable, noSurf, app.authenticate, app.authenticateCurrentUser, app.authenticateAsAdmin)
 
 	mux := pat.New()
-	//#region Snippet routes.
+
+	// Snippet
 	mux.Get("/", dynamicMiddleware.ThenFunc(app.home))
 	mux.Get("/snippet/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createSnippetForm))
 	mux.Post("/snippet/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createSnippet))
+	mux.Get("/message/chat", dynamicMiddleware.ThenFunc(app.showChatPage))
+	mux.Post("/message/create", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.createMessage))
+	mux.Get("/message/:id/delete", dynamicMiddleware.ThenFunc(app.deleteMessage))
+	mux.Get("/message/:id/edit", dynamicMiddleware.ThenFunc(app.showEditMessagePage))
+	mux.Post("/message/save", dynamicMiddleware.ThenFunc(app.saveEditedMessage))
 	mux.Get("/snippet/admin", dynamicMiddleware.ThenFunc(app.showAdminPage))
-	mux.Get("/snippet/chat", dynamicMiddleware.ThenFunc(app.showChatPage))
 	mux.Post("/snippet/delete", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.deleteSnippet))
 	mux.Get("/snippet/:id", dynamicMiddleware.ThenFunc(app.showSnippet))
-	//#endregion
+	// /Snippet
 
-	//#region User session routes.
+	// User session
 	mux.Get("/user/signup", dynamicMiddleware.ThenFunc(app.signupUserForm))
 	mux.Post("/user/signup", dynamicMiddleware.ThenFunc(app.signupUser))
 	mux.Get("/user/login", dynamicMiddleware.ThenFunc(app.loginUserForm))
 	mux.Post("/user/login", dynamicMiddleware.ThenFunc(app.loginUser))
 	mux.Post("/user/logout", dynamicMiddleware.Append(app.requireAuthentication).ThenFunc(app.logoutUser))
-	//#endregion
+	// /User session
 
-	//#region Test rotes
+	// Test
 	mux.Get("/ping", http.HandlerFunc(ping))
-	//#endregion
+	// /Test
+
+	mux.Get("/ping", http.HandlerFunc(ping))
 
 	// Create a file server which serves files out of the "./ui/static" directory. Note that the path given
 	// to the http.Dir function is relative to the project directory root.

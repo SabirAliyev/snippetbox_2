@@ -1,4 +1,4 @@
-package mysql
+package postgresql
 
 import (
 	"reflect"
@@ -10,19 +10,19 @@ import (
 func TestUserModelGet(t *testing.T) {
 	// Skip the test if the `-short` flag is provided when running the test.
 	if testing.Short() {
-		t.Skip("mysql: skipping integration test")
+		t.Skip("postgresql: skipping integration test")
 	}
 
 	// Set up a suite of table-driven tests and expected results.
 	tests := []struct {
 		name      string
-		userID    int
+		ID        int
 		wantUser  *models.User
 		wantError error
 	}{
 		{
-			name:   "Valid ID",
-			userID: 1,
+			name: "Valid ID",
+			ID:   1,
 			wantUser: &models.User{
 				ID:      1,
 				Name:    "Alice Jones",
@@ -34,13 +34,13 @@ func TestUserModelGet(t *testing.T) {
 		},
 		{
 			name:      "Zero ID",
-			userID:    0,
+			ID:        0,
 			wantUser:  nil,
 			wantError: models.ErrNoRecord,
 		},
 		{
 			name:      "Non-existent ID",
-			userID:    2,
+			ID:        2,
 			wantUser:  nil,
 			wantError: models.ErrNoRecord,
 		},
@@ -58,7 +58,7 @@ func TestUserModelGet(t *testing.T) {
 
 			// Call the UserModel.Get() method and check that the return value and error match
 			// the expected values for the sub-test.
-			user, err := m.Get(tt.userID)
+			user, err := m.Get(tt.ID)
 
 			if err != tt.wantError {
 				t.Errorf("want %v; got %s", tt.wantError, err)

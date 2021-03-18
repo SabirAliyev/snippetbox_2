@@ -3,26 +3,26 @@
 {{define "title"}}Message #{{$.Message.MessageID}}{{end}}
 
 {{define "main"}}
-<form action="/message/save" method="POST">
-    <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
+    <form action="/message/save" method="POST">
+        <input type="hidden" name="csrf_token" value="{{.CSRFToken}}">
 
-    <div id="wrapper">
-        <div>
-            <span style="font-style: italic; font-weight: bold">Name: {{$.Message.User}}</span>
-            {{with .Form}}
-                {{with .Errors.Get "message"}}
-                    <label class="error">{{.}}</label>
+        <div id="wrapper">
+            <div>
+                <span style="font-style: italic; font-weight: bold">Name: {{$.Message.User}}</span>
+                <input type="hidden" name="id" value="{{$.Message.MessageID}}">
+            </div>
+            <div>
+                <textarea name="content">{{$.Message.Content}}</textarea>
+                {{with .Form}}
+                    {{with .Errors.Get "message"}}
+                        <label class="error">{{.}}</label>
+                    {{end}}
                 {{end}}
-            {{end}}
-            <input type="hidden" name="id" value="{{$.Message.MessageID}}">
-        </div>
-        <div>
-            <textarea name="content" >{{$.Message.Content}}</textarea>
-        </div>
+            </div>
 
-        <div class="metadata">
-            <time>Created: {{humanDate $.Message.Date}}</time>
-            <time>Expires: {{humanDate $.Message.Expires}}</time>
+            <div class="metadata">
+                <time>Created: {{humanDate $.Message.Date}}</time>
+                <time>Expires: {{humanDate $.Message.Expires}}</time>
         </div>
     </div>
     <div>

@@ -314,22 +314,3 @@ footer {
     text-align: center;
 }
 
-#message_wrapper {
-    width: 400px;
-    height: 40px;
-    position: relative;
-}
-
-#message_field {
-    margin-left: 40px;
-    height: 40px;
-    width: 250px;
-}
-
-#send_message_button {
-    position: absolute;
-    top: 0;
-    right: 0;
-    width: 80px;
-    height: 40px;
-}

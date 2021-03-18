@@ -88,10 +88,10 @@ func (m *MessageModel) Latest(currentUserId int) ([]*models.Message, error) {
 	return messages, nil
 }
 
-func (m *MessageModel) Update(id int, content string) (int, error) {
+func (m *MessageModel) Update(id int, content string, edited bool) (int, error) {
 	stmt := `
 		UPDATE messages 
-		SET content = $2 
+		SET content = $2, edited = $3 
 		WHERE messageId =  $1;
 		`
 
@@ -100,7 +100,7 @@ func (m *MessageModel) Update(id int, content string) (int, error) {
 		log.Fatal(err)
 	}
 	var messageId int
-	err = result.QueryRow(id, content).Scan(&messageId)
+	err = result.QueryRow(id, content, edited).Scan(&messageId)
 	if err != nil {
 		return 0, err
 	}

@@ -11,7 +11,12 @@
                     <tr>
                         <td style="width: 100px">{{.User}}</td>
                         <td style="width: 100px">{{humanDate .Date}}</td>
-                        <td>{{.Content}}</td>
+                        {{if .Edited}}
+                            <td style="width: 80px"> edited</td>
+                        {{else}}
+                            <td style="width: 80px"></td>
+                        {{end}}
+                        <td style="align-content: end">{{.Content}}</td>
                         {{if .CreatedByUser}}
                             {{if .Editable}}
                                 <td style="width: 50px; align-content: end;"><a href="/message/{{.MessageID}}/edit">edit</a></td>

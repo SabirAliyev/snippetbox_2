@@ -151,7 +151,6 @@ func (app *application) deleteMessage(w http.ResponseWriter, r *http.Request) {
 
 func (app *application) showEditMessagePage(w http.ResponseWriter, r *http.Request) {
 	id, err := strconv.Atoi(r.URL.Query().Get(":id"))
-	fmt.Println("Show message ID: ", id)
 	if err != nil || id < 1 {
 		app.notFound(w)
 	}
@@ -183,7 +182,9 @@ func (app *application) saveEditedMessage(w http.ResponseWriter, r *http.Request
 	form.Required("content")
 	form.MaxLength("content", 200)
 
+	content := form.Get("content")
 	message, err := app.messages.Get(id)
+	var edited bool
 	if err != nil {
 		if errors.Is(err, models.ErrNoRecord) {
 			app.notFound(w)
@@ -191,14 +192,21 @@ func (app *application) saveEditedMessage(w http.ResponseWriter, r *http.Request
 			app.serverError(w, err)
 		}
 	}
+
+	if content != message.Content {
+		edited = true
+	}
+
 	if form.Valid() == false {
 		form.Errors.Add("message", "Message is too long. Please use text with length less then 200 characters.")
+		message.Content = content
 		app.render(w, r, "edit.message.page.tmpl", &templateData{
+			Form:    form,
 			Message: message,
 		})
 	} else {
 		if id != 0 {
-			_, err = app.messages.Update(id, form.Get("content"))
+			_, err = app.messages.Update(id, content, edited)
 			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
 		} else {
 			http.Redirect(w, r, "/message/chat", http.StatusSeeOther)
